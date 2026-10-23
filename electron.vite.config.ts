@@ -22,7 +22,12 @@ function cspPlugin(): Plugin {
 }
 
 export default defineConfig({
-  main: {},
+  main: {
+    build: {
+      // plist is ESM-only with no "require" export: bundle it into the CJS main build
+      externalizeDeps: { exclude: ['plist'] }
+    }
+  },
   preload: {},
   renderer: {
     resolve: {

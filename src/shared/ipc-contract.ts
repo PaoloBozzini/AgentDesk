@@ -1,3 +1,5 @@
+import type { AgentSummary } from './agent-types'
+
 /**
  * Single source of truth for the renderer <-> main API.
  * Main registers a handler per channel; preload exposes `window.agentDesk`
@@ -5,7 +7,8 @@
  */
 
 export const IpcChannel = {
-  AppGetInfo: 'app:get-info'
+  AppGetInfo: 'app:get-info',
+  AgentsList: 'agents:list'
 } as const
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
@@ -20,5 +23,8 @@ export interface AppInfo {
 export interface AgentDeskApi {
   app: {
     getInfo(): Promise<AppInfo>
+  }
+  agents: {
+    list(): Promise<AgentSummary[]>
   }
 }
