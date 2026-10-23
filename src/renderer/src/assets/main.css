@@ -452,3 +452,51 @@
   font-variant-numeric: tabular-nums;
   opacity: 0.7;
 }
+
+.log-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.log-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.log-status.warn {
+  color: var(--warn);
+}
+
+.log-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.log-note {
+  font-size: 12px;
+  padding-bottom: 4px;
+}
+
+.log-text {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0;
+  padding: 8px;
+  border-radius: var(--radius);
+  background: var(--bg);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.log-size {
+  flex-shrink: 0;
+  white-space: nowrap;
+}

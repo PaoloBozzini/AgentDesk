@@ -1,9 +1,17 @@
 import { useEffect, useState } from 'react'
 import type { AgentDetail, AgentSummary } from '../../../shared/agent-types'
 import { AgentActions } from './AgentActions'
+import { LogView } from './LogView'
 import { PlistTree } from './PlistTree'
 
-type Tab = 'keys' | 'xml'
+type Tab = 'keys' | 'xml' | 'stdout' | 'stderr'
+
+const TAB_LABELS: Record<Tab, string> = {
+  keys: 'Keys',
+  xml: 'Raw XML',
+  stdout: 'stdout',
+  stderr: 'stderr'
+}
 
 type Load =
   | { status: 'loading'; path: string }
@@ -43,6 +51,11 @@ export function AgentDetailPanel({
   // Ignore results that belong to a previously selected agent
   const current: Load = load.path === path ? load : { status: 'loading', path }
   const summary = current.status === 'ok' ? current.detail.summary : undefined
+  const data = current.status === 'ok' ? current.detail.data : undefined
+  const tabs: Tab[] = ['keys', 'xml']
+  if (typeof data?.StandardOutPath === 'string') tabs.push('stdout')
+  if (typeof data?.StandardErrorPath === 'string') tabs.push('stderr')
+  const activeTab: Tab = tabs.includes(tab) ? tab : 'keys'
 
   return (
     <aside className="detail">
@@ -65,15 +78,15 @@ export function AgentDetailPanel({
       )}
 
       <nav className="tabs" role="tablist">
-        {(['keys', 'xml'] as const).map((t) => (
+        {tabs.map((t) => (
           <button
             key={t}
             role="tab"
-            aria-selected={tab === t}
-            className={tab === t ? 'tab active' : 'tab'}
+            aria-selected={activeTab === t}
+            className={activeTab === t ? 'tab active' : 'tab'}
             onClick={() => setTab(t)}
           >
-            {t === 'keys' ? 'Keys' : 'Raw XML'}
+            {TAB_LABELS[t]}
           </button>
         ))}
       </nav>
@@ -81,12 +94,15 @@ export function AgentDetailPanel({
       <div className="detail-body">
         {current.status === 'loading' && <p className="state">Loading…</p>}
         {current.status === 'error' && <p className="state error">{current.message}</p>}
-        {current.status === 'ok' &&
-          (tab === 'keys' ? (
-            <PlistTree dict={current.detail.data} />
-          ) : (
-            <pre className="xml mono">{current.detail.xml}</pre>
-          ))}
+        {current.status === 'ok' && activeTab === 'keys' && (
+          <PlistTree dict={current.detail.data} />
+        )}
+        {current.status === 'ok' && activeTab === 'xml' && (
+          <pre className="xml mono">{current.detail.xml}</pre>
+        )}
+        {(activeTab === 'stdout' || activeTab === 'stderr') && (
+          <LogView key={`${path}:${activeTab}`} agentPath={path} stream={activeTab} />
+        )}
       </div>
     </aside>
   )

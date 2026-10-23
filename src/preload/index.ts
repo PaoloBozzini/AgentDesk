@@ -2,6 +2,16 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { IpcChannel, IpcEvent, type AgentDeskApi } from '../shared/ipc-contract'
 
 const api: AgentDeskApi = {
+  logs: {
+    tailFile: (agentPath, stream) => ipcRenderer.invoke(IpcChannel.LogsTailFile, agentPath, stream),
+    onEvent: (callback) => {
+      const listener = (_e: unknown, event: Parameters<typeof callback>[0]): void => callback(event)
+      ipcRenderer.on(IpcEvent.LogsEvent, listener)
+      return () => {
+        ipcRenderer.removeListener(IpcEvent.LogsEvent, listener)
+      }
+    }
+  },
   subscriptions: {
     dispose: (id) => ipcRenderer.invoke(IpcChannel.SubscriptionDispose, id)
   },
