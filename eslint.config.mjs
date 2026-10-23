@@ -29,6 +29,24 @@ export default defineConfig(
     }
   },
   {
+    files: ['src/**/*.ts'],
+    rules: {
+      // Spec: execFile/spawn with argument arrays only, never shell strings
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'child_process',
+              importNames: ['exec', 'execSync'],
+              message: 'Use execFile/spawn with an argument array.'
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
     files: ['scripts/**/*.cjs'],
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
