@@ -12,6 +12,11 @@ export const IpcChannel = {
   AgentsRead: 'agents:read'
 } as const
 
+/** Main -> renderer notifications. */
+export const IpcEvent = {
+  AgentsChanged: 'agents:changed'
+} as const
+
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
 
 export interface ListAgentsOptions {
@@ -33,5 +38,7 @@ export interface AgentDeskApi {
   agents: {
     list(options?: ListAgentsOptions): Promise<AgentSummary[]>
     read(path: string): Promise<AgentDetail>
+    /** Called when files in ~/Library/LaunchAgents change. Returns an unsubscribe function. */
+    onChanged(callback: () => void): () => void
   }
 }
