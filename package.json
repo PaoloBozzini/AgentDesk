@@ -1,5 +1,6 @@
 {
   "name": "agent-desk",
+  "productName": "Agent Desk",
   "version": "1.0.0",
   "description": "Manage macOS user LaunchAgents",
   "main": "./out/main/index.js",
@@ -22,7 +23,6 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0"
   },
   "devDependencies": {
