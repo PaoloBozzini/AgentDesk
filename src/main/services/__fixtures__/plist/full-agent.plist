@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.agentdesk.test.full</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/sh</string>
+		<string>-c</string>
+		<string>echo "hi &amp; bye" &gt; /dev/null</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<dict>
+		<key>SuccessfulExit</key>
+		<false/>
+		<key>PathState</key>
+		<dict>
+			<key>/tmp/agentdesk-flag</key>
+			<true/>
+		</dict>
+	</dict>
+	<key>StartInterval</key>
+	<integer>300</integer>
+	<key>StartCalendarInterval</key>
+	<array>
+		<dict>
+			<key>Hour</key>
+			<integer>9</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Weekday</key>
+			<integer>1</integer>
+		</dict>
+	</array>
+	<key>WatchPaths</key>
+	<array>
+		<string>/tmp/agentdesk-watch</string>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>/tmp</string>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/usr/bin:/bin</string>
+		<key>GREETING</key>
+		<string>ciao è ü 🚀</string>
+	</dict>
+	<key>StandardOutPath</key>
+	<string>/tmp/agentdesk.out.log</string>
+	<key>StandardErrorPath</key>
+	<string>/tmp/agentdesk.err.log</string>
+	<key>Nice</key>
+	<integer>-5</integer>
+	<key>ExitTimeOut</key>
+	<real>2.5</real>
+	<key>Created</key>
+	<date>2026-10-23T10:00:00Z</date>
+	<key>Blob</key>
+	<data>aGVsbG8=</data>
+	<key>EmptyDict</key>
+	<dict/>
+	<key>EmptyArray</key>
+	<array/>
+	<key>EmptyString</key>
+	<string></string>
+</dict>
+</plist>
