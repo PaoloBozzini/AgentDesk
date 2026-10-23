@@ -1,4 +1,4 @@
-import type { AgentDetail, AgentSummary } from './agent-types'
+import type { AgentDetail, AgentListResult } from './agent-types'
 
 /**
  * Single source of truth for the renderer <-> main API.
@@ -36,7 +36,7 @@ export interface AgentDeskApi {
     getInfo(): Promise<AppInfo>
   }
   agents: {
-    list(options?: ListAgentsOptions): Promise<AgentSummary[]>
+    list(options?: ListAgentsOptions): Promise<AgentListResult>
     read(path: string): Promise<AgentDetail>
     /** Called when files in ~/Library/LaunchAgents change. Returns an unsubscribe function. */
     onChanged(callback: () => void): () => void

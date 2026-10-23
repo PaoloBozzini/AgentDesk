@@ -1,0 +1,4 @@
+disabled services = {
+	"com.example.a" => true
+	"com.example.b" => false
+}

@@ -38,7 +38,8 @@ export function summarize(
     label,
     program: typeof data.Program === 'string' ? data.Program : undefined,
     programArguments: stringArray(data.ProgramArguments),
-    labelMismatch: label !== undefined && fileName !== `${label}.plist`
+    labelMismatch: label !== undefined && fileName !== `${label}.plist`,
+    disabledKey: typeof data.Disabled === 'boolean' ? data.Disabled : undefined
   }
 }
 

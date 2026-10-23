@@ -2,7 +2,10 @@ import { app, ipcMain, type IpcMainInvokeEvent } from 'electron'
 import { join } from 'path'
 import { IpcChannel, type AppInfo, type IpcChannelName } from '../../shared/ipc-contract'
 import { isTrustedRendererUrl } from '../security/policy'
+import type { AgentListResult } from '../../shared/agent-types'
 import { agentDirsFor, listAgents, readAgent } from '../services/agents'
+import { Launchctl } from '../services/launchctl/runner'
+import { attachRuntime, readDomains } from '../services/status'
 
 const rendererIndexPath = join(__dirname, '../renderer/index.html')
 
@@ -37,7 +40,18 @@ export function registerIpcHandlers(): void {
     uid: process.getuid?.() ?? -1
   }))
 
-  handle(IpcChannel.AgentsList, (_e, options) => listAgents(agentDirsFor(options)))
+  const launchctl = new Launchctl({ uid: process.getuid!() })
+
+  handle(IpcChannel.AgentsList, async (_e, options): Promise<AgentListResult> => {
+    const dirs = agentDirsFor(options)
+    const includeSystem = dirs.some((d) => d.scope === 'global-daemon')
+    const [agents, domains] = await Promise.all([
+      listAgents(dirs),
+      readDomains(launchctl, includeSystem).catch((e: Error) => e)
+    ])
+    if (domains instanceof Error) return { agents, statusError: domains.message }
+    return { agents: attachRuntime(agents, domains) }
+  })
   handle(IpcChannel.AgentsRead, (_e, path) =>
     readAgent(path, agentDirsFor({ includeSystem: true }))
   )

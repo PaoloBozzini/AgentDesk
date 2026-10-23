@@ -95,6 +95,11 @@ export class LaunchctlCommands {
     return ['print', this.service(label)]
   }
 
+  /** Read-only view of the system domain (daemons). Works without root. */
+  printSystemDomain(): string[] {
+    return ['print', 'system']
+  }
+
   printDisabled(): string[] {
     return ['print-disabled', this.domain]
   }
