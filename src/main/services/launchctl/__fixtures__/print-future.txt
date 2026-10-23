@@ -1,0 +1,14 @@
+gui/501/com.agentdesk.test.future = {
+	state = running
+	pid = 4242
+	some new field = with = equals
+	nested = {
+		pid = 999
+		state = not running
+		last exit code = 7
+	}
+	runs = not-a-number
+	last exit code = 3: some future description
+	arguments = {
+	}
+}
