@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { AgentSummary } from '../../../shared/agent-types'
 import type { ActionError, AgentAction } from '../../../shared/control-types'
 import { availableActions } from '../lib/actions'
+import { ErrorPanel } from './ErrorPanel'
 
 const LABELS: Record<AgentAction, string> = {
   load: 'Load',
@@ -66,12 +67,11 @@ export function AgentActions({
         <p className="muted action-note">launchd waits for its restart throttle (about 10 s)…</p>
       )}
       {error && (
-        <div className="action-error" role="alert">
-          <strong>
-            {LABELS[error.action]} failed: {error.error.summary}
-          </strong>
-          {error.error.hint && <span> {error.error.hint}</span>}
-        </div>
+        <ErrorPanel
+          title={LABELS[error.action]}
+          error={error.error}
+          onDismiss={() => setError(null)}
+        />
       )}
     </div>
   )

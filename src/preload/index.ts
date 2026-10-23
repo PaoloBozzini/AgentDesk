@@ -3,7 +3,8 @@ import { IpcChannel, IpcEvent, type AgentDeskApi } from '../shared/ipc-contract'
 
 const api: AgentDeskApi = {
   app: {
-    getInfo: () => ipcRenderer.invoke(IpcChannel.AppGetInfo)
+    getInfo: () => ipcRenderer.invoke(IpcChannel.AppGetInfo),
+    copyText: (text) => ipcRenderer.invoke(IpcChannel.AppCopyText, text)
   },
   agents: {
     list: (options) => ipcRenderer.invoke(IpcChannel.AgentsList, options),

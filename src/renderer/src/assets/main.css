@@ -354,16 +354,69 @@
   filter: brightness(1.1);
 }
 
-.action-error {
+.action-note {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.error-panel {
   margin-top: 8px;
   padding: 8px 10px;
   border-radius: var(--radius);
   background: var(--danger-bg);
   color: var(--danger);
   font-size: 12px;
+  user-select: text;
 }
 
-.action-note {
+.error-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.error-panel-buttons {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.error-hint {
+  color: var(--text);
+  margin-top: 2px;
+}
+
+.link-button {
+  border: none;
+  background: none;
+  padding: 2px 4px;
+  color: var(--danger);
+  text-decoration: underline;
+}
+
+.error-details {
   margin-top: 6px;
-  font-size: 12px;
+  color: var(--text);
+}
+
+.error-details summary {
+  cursor: default;
+  color: var(--danger);
+}
+
+.error-details h4 {
+  margin: 6px 0 2px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.error-details pre {
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: var(--bg);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

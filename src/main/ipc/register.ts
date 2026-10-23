@@ -1,4 +1,4 @@
-import { app, ipcMain, type IpcMainInvokeEvent } from 'electron'
+import { app, clipboard, ipcMain, type IpcMainInvokeEvent } from 'electron'
 import { join } from 'path'
 import { IpcChannel, type AppInfo, type IpcChannelName } from '../../shared/ipc-contract'
 import { isTrustedRendererUrl } from '../security/policy'
@@ -41,6 +41,11 @@ export function registerIpcHandlers(): void {
     platform: process.platform,
     uid: process.getuid?.() ?? -1
   }))
+
+  handle(IpcChannel.AppCopyText, (_e, text) => {
+    if (typeof text !== 'string' || text.length > 1_000_000) throw new Error('Invalid text')
+    clipboard.writeText(text)
+  })
 
   const launchctl = new Launchctl({ uid: process.getuid!() })
 
