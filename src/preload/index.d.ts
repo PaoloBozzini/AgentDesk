@@ -1,8 +1,7 @@
-import { ElectronAPI } from '@electron-toolkit/preload'
+import type { AgentDeskApi } from '../shared/ipc-contract'
 
 declare global {
   interface Window {
-    electron: ElectronAPI
-    api: unknown
+    agentDesk: AgentDeskApi
   }
 }
