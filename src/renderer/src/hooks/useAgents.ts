@@ -8,13 +8,13 @@ export interface AgentsState {
   reload: () => void
 }
 
-export function useAgents(): AgentsState {
+export function useAgents(includeSystem: boolean): AgentsState {
   const [agents, setAgents] = useState<AgentSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchAgents = useCallback(() => {
-    window.agentDesk.agents.list().then(
+    window.agentDesk.agents.list({ includeSystem }).then(
       (list) => {
         setAgents(list)
         setError(null)
@@ -25,7 +25,7 @@ export function useAgents(): AgentsState {
         setLoading(false)
       }
     )
-  }, [])
+  }, [includeSystem])
 
   useEffect(fetchAgents, [fetchAgents])
 

@@ -4,7 +4,8 @@ import { AgentTable } from './components/AgentTable'
 import { useAgents } from './hooks/useAgents'
 
 function App(): React.JSX.Element {
-  const { agents, loading, error } = useAgents()
+  const [includeSystem, setIncludeSystem] = useState(false)
+  const { agents, loading, error } = useAgents(includeSystem)
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
 
   useEffect(() => {
@@ -21,13 +22,21 @@ function App(): React.JSX.Element {
         <h1>Agent Desk</h1>
         <span className="muted">{loading ? 'Loading…' : `${agents.length} agents`}</span>
         <span className="spacer" />
+        <label className="toggle">
+          <input
+            type="checkbox"
+            checked={includeSystem}
+            onChange={(e) => setIncludeSystem(e.target.checked)}
+          />
+          Show system agents (read-only)
+        </label>
       </header>
       <div className="split">
         <main className="content">
           {error ? (
             <p className="state error">{error}</p>
           ) : !loading && agents.length === 0 ? (
-            <p className="state">No agents in ~/Library/LaunchAgents</p>
+            <p className="state">No agents found</p>
           ) : (
             <AgentTable agents={agents} selectedPath={selectedPath} onSelect={setSelectedPath} />
           )}

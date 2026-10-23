@@ -6,7 +6,7 @@ const api: AgentDeskApi = {
     getInfo: () => ipcRenderer.invoke(IpcChannel.AppGetInfo)
   },
   agents: {
-    list: () => ipcRenderer.invoke(IpcChannel.AgentsList),
+    list: (options) => ipcRenderer.invoke(IpcChannel.AgentsList, options),
     read: (path) => ipcRenderer.invoke(IpcChannel.AgentsRead, path)
   }
 }

@@ -4,6 +4,7 @@ import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   AgentPathError,
+  agentDirsFor,
   listAgents,
   readAgent,
   resolveAgentFile,
@@ -137,5 +138,24 @@ describe('readAgent', () => {
     expect(detail.data.RunAtLoad).toBe(true)
     expect(detail.xml).toBe(xml)
     await rm(base, { recursive: true, force: true })
+  })
+})
+
+describe('agentDirsFor', () => {
+  it('defaults to the user folder only', () => {
+    expect(agentDirsFor(undefined, '/Users/x')).toEqual([
+      { dir: '/Users/x/Library/LaunchAgents', scope: 'user' }
+    ])
+  })
+
+  it('adds system folders only for a strict true', () => {
+    expect(agentDirsFor({ includeSystem: true }, '/Users/x').map((d) => d.scope)).toEqual([
+      'user',
+      'global-agent',
+      'global-daemon'
+    ])
+    for (const bad of [{ includeSystem: 'true' }, { includeSystem: 1 }, 'x', null]) {
+      expect(agentDirsFor(bad, '/Users/x')).toHaveLength(1)
+    }
   })
 })

@@ -21,6 +21,11 @@ function AgentRow({
     >
       <td className="col-label">
         <span className="agent-label">{agent.label ?? agent.fileName}</span>
+        {agent.readOnly && (
+          <span className="badge muted-badge" title="System agent, read-only">
+            {agent.scope === 'global-daemon' ? 'daemon' : 'system'}
+          </span>
+        )}
         {agent.error && <span className="badge danger">unreadable</span>}
         {!agent.error && !agent.label && <span className="badge warn">no Label</span>}
         {agent.labelMismatch && (
