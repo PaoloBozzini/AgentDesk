@@ -5,6 +5,7 @@ const api: AgentDeskApi = {
   logs: {
     tailFile: (agentPath, stream) => ipcRenderer.invoke(IpcChannel.LogsTailFile, agentPath, stream),
     show: (agentPath, window) => ipcRenderer.invoke(IpcChannel.LogsShow, agentPath, window),
+    stream: (agentPath) => ipcRenderer.invoke(IpcChannel.LogsStream, agentPath),
     onEvent: (callback) => {
       const listener = (_e: unknown, event: Parameters<typeof callback>[0]): void => callback(event)
       ipcRenderer.on(IpcEvent.LogsEvent, listener)

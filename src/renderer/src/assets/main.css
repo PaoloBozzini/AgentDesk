@@ -563,3 +563,8 @@
   margin-top: 4px;
   overflow-wrap: anywhere;
 }
+
+.button.live.active {
+  border-color: var(--danger);
+  color: var(--danger);
+}

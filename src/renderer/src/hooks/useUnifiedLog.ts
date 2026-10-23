@@ -6,8 +6,8 @@ import { ensureLogHub, listen } from '../lib/logHub'
 /** Rows kept in the view (newest kept). */
 export const MAX_VIEW_LINES = 5000
 
-// `log stream` (live mode) is added in #22
-export type UnifiedLogRequest = { kind: 'show'; window: LogWindow; nonce: number }
+export type UnifiedLogRequest =
+  { kind: 'show'; window: LogWindow; nonce: number } | { kind: 'stream' }
 
 export interface UnifiedLogState {
   lines: UnifiedLogLine[]
@@ -25,10 +25,12 @@ export interface UnifiedLogState {
 const INITIAL: UnifiedLogState = { lines: [], running: true, truncated: false, dropped: 0 }
 
 function start(agentPath: string, request: UnifiedLogRequest): Promise<UnifiedLogStart> {
-  return window.agentDesk.logs.show(agentPath, request.window)
+  return request.kind === 'show'
+    ? window.agentDesk.logs.show(agentPath, request.window)
+    : window.agentDesk.logs.stream(agentPath)
 }
 
-/** Runs one `log show`; mount with a `key` per request so state starts fresh. */
+/** Runs one `log show` or `log stream`; mount with a `key` per request so state starts fresh. */
 export function useUnifiedLog(agentPath: string, request: UnifiedLogRequest): UnifiedLogState {
   const [state, setState] = useState<UnifiedLogState>(INITIAL)
   const requestKey = JSON.stringify(request)

@@ -16,7 +16,8 @@ export const IpcChannel = {
   AgentsControl: 'agents:control',
   SubscriptionDispose: 'subscription:dispose',
   LogsTailFile: 'logs:tail-file',
-  LogsShow: 'logs:show'
+  LogsShow: 'logs:show',
+  LogsStream: 'logs:stream'
 } as const
 
 /** Main -> renderer notifications. */
@@ -45,6 +46,8 @@ export interface AgentDeskApi {
     tailFile(agentPath: string, stream: LogStream): Promise<TailStart>
     /** `log show --last <window>` for the agent; lines arrive as events. */
     show(agentPath: string, window: LogWindow): Promise<UnifiedLogStart>
+    /** Live `log stream` for the agent until disposed. */
+    stream(agentPath: string): Promise<UnifiedLogStart>
     /** All log subscription events; filter by `id`. Returns an unsubscribe function. */
     onEvent(callback: (event: LogEvent) => void): () => void
   }
