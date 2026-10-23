@@ -1,4 +1,4 @@
-import type { AgentSummary } from './agent-types'
+import type { AgentDetail, AgentSummary } from './agent-types'
 
 /**
  * Single source of truth for the renderer <-> main API.
@@ -8,7 +8,8 @@ import type { AgentSummary } from './agent-types'
 
 export const IpcChannel = {
   AppGetInfo: 'app:get-info',
-  AgentsList: 'agents:list'
+  AgentsList: 'agents:list',
+  AgentsRead: 'agents:read'
 } as const
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
@@ -26,5 +27,6 @@ export interface AgentDeskApi {
   }
   agents: {
     list(): Promise<AgentSummary[]>
+    read(path: string): Promise<AgentDetail>
   }
 }

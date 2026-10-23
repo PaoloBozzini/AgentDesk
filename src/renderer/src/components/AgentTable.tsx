@@ -3,9 +3,22 @@ import { programLine } from '../lib/format'
 
 const PLACEHOLDER = '—'
 
-function AgentRow({ agent }: { agent: AgentSummary }): React.JSX.Element {
+function AgentRow({
+  agent,
+  selected,
+  onSelect
+}: {
+  agent: AgentSummary
+  selected: boolean
+  onSelect: (path: string) => void
+}): React.JSX.Element {
   return (
-    <tr title={agent.path}>
+    <tr
+      title={agent.path}
+      className={selected ? 'selected' : undefined}
+      aria-selected={selected}
+      onClick={() => onSelect(agent.path)}
+    >
       <td className="col-label">
         <span className="agent-label">{agent.label ?? agent.fileName}</span>
         {agent.error && <span className="badge danger">unreadable</span>}
@@ -28,7 +41,15 @@ function AgentRow({ agent }: { agent: AgentSummary }): React.JSX.Element {
   )
 }
 
-export function AgentTable({ agents }: { agents: AgentSummary[] }): React.JSX.Element {
+export function AgentTable({
+  agents,
+  selectedPath,
+  onSelect
+}: {
+  agents: AgentSummary[]
+  selectedPath: string | null
+  onSelect: (path: string) => void
+}): React.JSX.Element {
   return (
     <table className="agent-table">
       <thead>
@@ -43,7 +64,7 @@ export function AgentTable({ agents }: { agents: AgentSummary[] }): React.JSX.El
       </thead>
       <tbody>
         {agents.map((a) => (
-          <AgentRow key={a.path} agent={a} />
+          <AgentRow key={a.path} agent={a} selected={a.path === selectedPath} onSelect={onSelect} />
         ))}
       </tbody>
     </table>
