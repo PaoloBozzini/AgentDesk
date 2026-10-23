@@ -9,6 +9,7 @@ import type { ActionResult, AgentAction } from './control-types'
 
 export const IpcChannel = {
   AppGetInfo: 'app:get-info',
+  AppCopyText: 'app:copy-text',
   AgentsList: 'agents:list',
   AgentsRead: 'agents:read',
   AgentsControl: 'agents:control'
@@ -36,6 +37,8 @@ export interface AppInfo {
 export interface AgentDeskApi {
   app: {
     getInfo(): Promise<AppInfo>
+    /** Clipboard write via main (the renderer has no clipboard permission). */
+    copyText(text: string): Promise<void>
   }
   agents: {
     list(options?: ListAgentsOptions): Promise<AgentListResult>
