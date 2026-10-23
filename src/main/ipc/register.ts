@@ -6,6 +6,7 @@ import type { AgentListResult } from '../../shared/agent-types'
 import { isAgentAction } from '../../shared/control-types'
 import { agentDirsFor, listAgents, readAgent, userAgentsDir } from '../services/agents'
 import { controlAgent } from '../services/control'
+import { registry, trackOwner } from '../services/registry'
 import { Launchctl } from '../services/launchctl/runner'
 import { attachRuntime, readDomains } from '../services/status'
 
@@ -30,6 +31,7 @@ export function handle<T>(
 ): void {
   ipcMain.handle(channel, (event, ...args) => {
     assertTrustedSender(event)
+    trackOwner(event.sender)
     return fn(event, ...args)
   })
 }
@@ -45,6 +47,11 @@ export function registerIpcHandlers(): void {
   handle(IpcChannel.AppCopyText, (_e, text) => {
     if (typeof text !== 'string' || text.length > 1_000_000) throw new Error('Invalid text')
     clipboard.writeText(text)
+  })
+
+  handle(IpcChannel.SubscriptionDispose, (event, id) => {
+    // Only the window that created a subscription may end it
+    if (typeof id === 'string' && registry.owns(id, event.sender.id)) registry.dispose(id)
   })
 
   const launchctl = new Launchctl({ uid: process.getuid!() })

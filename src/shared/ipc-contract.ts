@@ -12,7 +12,8 @@ export const IpcChannel = {
   AppCopyText: 'app:copy-text',
   AgentsList: 'agents:list',
   AgentsRead: 'agents:read',
-  AgentsControl: 'agents:control'
+  AgentsControl: 'agents:control',
+  SubscriptionDispose: 'subscription:dispose'
 } as const
 
 /** Main -> renderer notifications. */
@@ -35,6 +36,10 @@ export interface AppInfo {
 }
 
 export interface AgentDeskApi {
+  subscriptions: {
+    /** Stop a live subscription (log tail / stream) and release its process. */
+    dispose(id: string): Promise<void>
+  }
   app: {
     getInfo(): Promise<AppInfo>
     /** Clipboard write via main (the renderer has no clipboard permission). */
