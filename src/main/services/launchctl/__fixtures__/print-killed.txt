@@ -1,0 +1,45 @@
+gui/501/com.agentdesk.test.killed = {
+	active count = 0
+	path = /Users/tester/Library/LaunchAgents/com.agentdesk.test.killed.plist
+	type = LaunchAgent
+	state = not running
+
+	program = /bin/sleep
+	arguments = {
+		/bin/sleep
+		600
+	}
+
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.XXXXXXXXXX/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.agentdesk.test.killed
+	}
+
+	domain = gui/501 [100016]
+	asid = 100016
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 1
+	last terminating signal = Killed: 9
+
+	spawn type = daemon (3)
+	jetsam priority = 40
+	jetsam memory limit (active) = (unlimited)
+	jetsam memory limit (inactive) = (unlimited)
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+	probabilistic guard malloc policy = {
+		activation rate = 1/1000
+		sample rate = 1/0
+	}
+
+	properties = runatload | inferred program
+}

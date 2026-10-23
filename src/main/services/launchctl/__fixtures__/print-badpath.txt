@@ -1,0 +1,64 @@
+gui/501/com.agentdesk.test.badpath = {
+	active count = 0
+	path = /Users/tester/Library/LaunchAgents/com.agentdesk.test.badpath.plist
+	type = LaunchAgent
+	state = spawn scheduled
+
+	program = /nonexistent/agentdesk
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.XXXXXXXXXX/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.agentdesk.test.badpath
+	}
+
+	domain = gui/501 [100016]
+	asid = 100016
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 1
+	last exit code = 78: EX_CONFIG
+
+	event triggers = {
+		com.agentdesk.test.badpath => {
+			keepalive = 0
+			service = com.agentdesk.test.badpath
+			stream = com.apple.launchd.helper
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Executable" => "/nonexistent/agentdesk"
+				"SkipImmediatePoll" => false
+			}
+		}
+	}
+
+	event channels = {
+		"com.apple.launchd.helper" = {
+			port = 0x0
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+			watching = 0
+		}
+	}
+
+	spawn type = daemon (3)
+	jetsam priority = 40
+	jetsam memory limit (active) = (unlimited)
+	jetsam memory limit (inactive) = (unlimited)
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+	probabilistic guard malloc policy = {
+		activation rate = 1/1000
+		sample rate = 1/0
+	}
+
+	properties = runatload | penalty box
+}
