@@ -2,7 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AgentDetailPanel } from './components/AgentDetailPanel'
 import { AgentTable } from './components/AgentTable'
 import { useAgents } from './hooks/useAgents'
-import { EMPTY_FILTER, filterAgents, type AgentFilter } from './lib/filter'
+import {
+  EMPTY_FILTER,
+  filterAgents,
+  STATUS_FILTER_LABELS,
+  STATUS_FILTERS,
+  statusCounts,
+  type AgentFilter
+} from './lib/filter'
 
 function App(): React.JSX.Element {
   const [includeSystem, setIncludeSystem] = useState(false)
@@ -11,6 +18,7 @@ function App(): React.JSX.Element {
   const [filter, setFilter] = useState<AgentFilter>(EMPTY_FILTER)
   const searchRef = useRef<HTMLInputElement>(null)
   const visible = useMemo(() => filterAgents(agents, filter), [agents, filter])
+  const counts = useMemo(() => statusCounts(agents, filter.query), [agents, filter.query])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -69,6 +77,18 @@ function App(): React.JSX.Element {
           Show system agents (read-only)
         </label>
       </header>
+      <nav className="filters" aria-label="Filter by status">
+        {STATUS_FILTERS.map((s) => (
+          <button
+            key={s}
+            className={filter.status === s ? 'chip active' : 'chip'}
+            aria-pressed={filter.status === s}
+            onClick={() => setFilter((f) => ({ ...f, status: s }))}
+          >
+            {STATUS_FILTER_LABELS[s]} <span className="chip-count">{counts[s]}</span>
+          </button>
+        ))}
+      </nav>
       {statusError && (
         <p className="banner" title={statusError}>
           Couldn’t read launchd status: {statusError}
@@ -81,7 +101,7 @@ function App(): React.JSX.Element {
           ) : !loading && agents.length === 0 ? (
             <p className="state">No agents found</p>
           ) : !loading && visible.length === 0 ? (
-            <p className="state">No agents match “{filter.query.trim()}”</p>
+            <p className="state">No agents match the current filters</p>
           ) : (
             <AgentTable agents={visible} selectedPath={selectedPath} onSelect={setSelectedPath} />
           )}
