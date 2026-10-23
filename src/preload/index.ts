@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { IpcChannel, type AgentDeskApi } from '../shared/ipc-contract'
+import { IpcChannel, IpcEvent, type AgentDeskApi } from '../shared/ipc-contract'
 
 const api: AgentDeskApi = {
   app: {
@@ -7,7 +7,15 @@ const api: AgentDeskApi = {
   },
   agents: {
     list: (options) => ipcRenderer.invoke(IpcChannel.AgentsList, options),
-    read: (path) => ipcRenderer.invoke(IpcChannel.AgentsRead, path)
+    read: (path) => ipcRenderer.invoke(IpcChannel.AgentsRead, path),
+    onChanged: (callback) => {
+      // Never hand the IpcRendererEvent to the renderer
+      const listener = (): void => callback()
+      ipcRenderer.on(IpcEvent.AgentsChanged, listener)
+      return () => {
+        ipcRenderer.removeListener(IpcEvent.AgentsChanged, listener)
+      }
+    }
   }
 }
 

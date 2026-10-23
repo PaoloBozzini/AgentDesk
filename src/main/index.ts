@@ -4,6 +4,9 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { APP_ID } from '../shared/app-info'
 import { hardenApp } from './security/harden'
 import { registerIpcHandlers } from './ipc/register'
+import { userAgentsDir } from './services/agents'
+import { FolderWatcher } from './services/watcher'
+import { IpcEvent } from '../shared/ipc-contract'
 
 hardenApp()
 
@@ -27,6 +30,13 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
+
+  const watcher = new FolderWatcher(userAgentsDir(), () => {
+    if (!mainWindow.isDestroyed()) mainWindow.webContents.send(IpcEvent.AgentsChanged)
+  })
+  watcher.start()
+  mainWindow.on('closed', () => watcher.stop())
+  app.once('before-quit', () => watcher.stop())
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.

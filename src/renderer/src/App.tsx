@@ -5,16 +5,20 @@ import { useAgents } from './hooks/useAgents'
 
 function App(): React.JSX.Element {
   const [includeSystem, setIncludeSystem] = useState(false)
-  const { agents, loading, error } = useAgents(includeSystem)
+  const { agents, loading, error, revision, reload } = useAgents(includeSystem)
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') setSelectedPath(null)
+      if (e.key === 'r' && e.metaKey) {
+        e.preventDefault()
+        reload()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [reload])
 
   return (
     <div className="app">
@@ -22,6 +26,9 @@ function App(): React.JSX.Element {
         <h1>Agent Desk</h1>
         <span className="muted">{loading ? 'Loading…' : `${agents.length} agents`}</span>
         <span className="spacer" />
+        <button className="button" onClick={reload} disabled={loading} title="Refresh (⌘R)">
+          Refresh
+        </button>
         <label className="toggle">
           <input
             type="checkbox"
@@ -42,7 +49,11 @@ function App(): React.JSX.Element {
           )}
         </main>
         {selectedPath && (
-          <AgentDetailPanel path={selectedPath} onClose={() => setSelectedPath(null)} />
+          <AgentDetailPanel
+            path={selectedPath}
+            revision={revision}
+            onClose={() => setSelectedPath(null)}
+          />
         )}
       </div>
     </div>

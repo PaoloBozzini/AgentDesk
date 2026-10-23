@@ -280,3 +280,18 @@
   gap: 6px;
   color: var(--text-muted);
 }
+
+.button {
+  padding: 3px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.button:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.button:disabled {
+  opacity: 0.5;
+}

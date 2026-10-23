@@ -5,6 +5,8 @@ export interface AgentsState {
   agents: AgentSummary[]
   loading: boolean
   error: string | null
+  /** Bumped on every successful load, so dependants (detail panel) can re-read. */
+  revision: number
   reload: () => void
 }
 
@@ -12,6 +14,7 @@ export function useAgents(includeSystem: boolean): AgentsState {
   const [agents, setAgents] = useState<AgentSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [revision, setRevision] = useState(0)
 
   const fetchAgents = useCallback(() => {
     window.agentDesk.agents.list({ includeSystem }).then(
@@ -19,6 +22,7 @@ export function useAgents(includeSystem: boolean): AgentsState {
         setAgents(list)
         setError(null)
         setLoading(false)
+        setRevision((r) => r + 1)
       },
       (e: Error) => {
         setError(e.message)
@@ -29,10 +33,13 @@ export function useAgents(includeSystem: boolean): AgentsState {
 
   useEffect(fetchAgents, [fetchAgents])
 
+  // Files changed outside the app: refresh quietly (no loading flash)
+  useEffect(() => window.agentDesk.agents.onChanged(fetchAgents), [fetchAgents])
+
   const reload = useCallback(() => {
     setLoading(true)
     fetchAgents()
   }, [fetchAgents])
 
-  return { agents, loading, error, reload }
+  return { agents, loading, error, revision, reload }
 }

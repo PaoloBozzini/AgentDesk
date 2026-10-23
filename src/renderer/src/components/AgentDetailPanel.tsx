@@ -11,9 +11,12 @@ type Load =
 
 export function AgentDetailPanel({
   path,
+  revision,
   onClose
 }: {
   path: string
+  /** Re-read the file when this changes (list refreshed). */
+  revision: number
   onClose: () => void
 }): React.JSX.Element {
   const [tab, setTab] = useState<Tab>('keys')
@@ -28,7 +31,7 @@ export function AgentDetailPanel({
     return () => {
       cancelled = true
     }
-  }, [path])
+  }, [path, revision])
 
   // Ignore results that belong to a previously selected agent
   const current: Load = load.path === path ? load : { status: 'loading', path }
