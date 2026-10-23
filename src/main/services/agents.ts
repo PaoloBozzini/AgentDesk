@@ -71,6 +71,16 @@ async function listDir({ dir, scope }: AgentDir): Promise<AgentSummary[]> {
   )
 }
 
+/** Folders to list. Renderer input is untrusted: only a strict `true` enables system folders. */
+export function agentDirsFor(options: unknown, home = homedir()): AgentDir[] {
+  const user: AgentDir = { dir: userAgentsDir(home), scope: 'user' }
+  const includeSystem =
+    typeof options === 'object' &&
+    options !== null &&
+    (options as { includeSystem?: unknown }).includeSystem === true
+  return includeSystem ? [user, ...SYSTEM_AGENT_DIRS] : [user]
+}
+
 export function sortAgents(agents: AgentSummary[]): AgentSummary[] {
   const key = (a: AgentSummary): string => (a.label ?? a.fileName).toLowerCase()
   return [...agents].sort((a, b) => key(a).localeCompare(key(b)))

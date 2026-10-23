@@ -14,6 +14,11 @@ export const IpcChannel = {
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
 
+export interface ListAgentsOptions {
+  /** Also list /Library/LaunchAgents and /Library/LaunchDaemons (read-only). */
+  includeSystem?: boolean
+}
+
 export interface AppInfo {
   name: string
   version: string
@@ -26,7 +31,7 @@ export interface AgentDeskApi {
     getInfo(): Promise<AppInfo>
   }
   agents: {
-    list(): Promise<AgentSummary[]>
+    list(options?: ListAgentsOptions): Promise<AgentSummary[]>
     read(path: string): Promise<AgentDetail>
   }
 }
