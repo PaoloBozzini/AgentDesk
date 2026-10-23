@@ -2,6 +2,9 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { IpcChannel, IpcEvent, type AgentDeskApi } from '../shared/ipc-contract'
 
 const api: AgentDeskApi = {
+  subscriptions: {
+    dispose: (id) => ipcRenderer.invoke(IpcChannel.SubscriptionDispose, id)
+  },
   app: {
     getInfo: () => ipcRenderer.invoke(IpcChannel.AppGetInfo),
     copyText: (text) => ipcRenderer.invoke(IpcChannel.AppCopyText, text)

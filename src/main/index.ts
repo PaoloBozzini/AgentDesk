@@ -4,11 +4,13 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { APP_ID } from '../shared/app-info'
 import { hardenApp } from './security/harden'
 import { registerIpcHandlers } from './ipc/register'
+import { installQuitCleanup } from './services/registry'
 import { userAgentsDir } from './services/agents'
 import { FolderWatcher } from './services/watcher'
 import { IpcEvent } from '../shared/ipc-contract'
 
 hardenApp()
+installQuitCleanup()
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
