@@ -1,0 +1,66 @@
+gui/501 = {
+	type = login
+	handle = 100016
+	active count = 389
+	service count = 388
+	active service count = 114
+	creator = loginwindow[370]
+	creator euid = 0
+	session = Aqua
+	endpoint destination = com.apple.xpc.launchd.domain.user.501
+	auxiliary bootstrapper = com.apple.xpc.otherbsd (complete)
+	security context = {
+		uid = 501
+		asid = 100016
+	}
+
+	bringup time = 35 ms
+	death port = 0x11603
+
+	environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.XXXXXXXXXX/Listeners
+	}
+
+	services = {
+		    1344   (pe) 	com.apple.syncdefaultsd
+		     756      - 	com.apple.assistantd
+		       0      0 	com.apple.DataDetectorsLocalSources
+		    3191      - 	com.agentdesk.test.running
+		       0     -9 	com.agentdesk.test.killed
+		       0      0 	com.agentdesk.test.exited
+		       0      1 	com.agentdesk.test.failed
+		       0     78 	com.agentdesk.test.badpath
+		       0      - 	com.agentdesk.test.never
+		       0    111 	com.example.helper.cc24aef4a1b90ed56a725c38014c95072f92651fb65e1bf9c8e43c37a23d420d
+		   82420      1 	com.apple.Siri.agent
+		       0      0 	homebrew.mxcl.postgresql@14
+	}
+
+	unmanaged processes = {
+		com.apple.xpc.launchd.unmanaged.loginwindow.370 = {
+			active count = 1
+			dynamic endpoints = {
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.syncdefaultsd" = {
+			port = 0x1a03
+			active = 1
+		}
+	}
+
+	task-special ports = {
+		0x1d03 4 bootstrap com.apple.xpc.launchd.domain.user.501
+	}
+
+	disabled services = {
+		"com.google.keystone.user.xpcservice" => enabled
+		"com.apple.ManagedClientAgent.enrollagent" => disabled
+		"com.agentdesk.test.never" => disabled
+		"com.agentdesk.test.exited" => enabled
+	}
+
+	properties = 
+}

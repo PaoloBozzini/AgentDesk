@@ -25,7 +25,7 @@ app.on('browser-window-created', (_e, win) => {
       const result = await win.webContents.executeJavaScript(`(async () => ({
         isolated: typeof window.require === 'undefined' && typeof window.process === 'undefined',
         info: await window.agentDesk.app.getInfo(),
-        agents: (await window.agentDesk.agents.list()).length
+        agents: (await window.agentDesk.agents.list()).agents.length
       }))()`)
       if (!result.isolated) return fail('renderer can see Node globals')
       if (!result.info || !result.info.version) return fail('app.getInfo() returned nothing')

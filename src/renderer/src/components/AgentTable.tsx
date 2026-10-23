@@ -1,5 +1,5 @@
 import type { AgentSummary } from '../../../shared/agent-types'
-import { programLine } from '../lib/format'
+import { formatExit, isFailed, programLine } from '../lib/format'
 
 const PLACEHOLDER = '—'
 
@@ -12,6 +12,7 @@ function AgentRow({
   selected: boolean
   onSelect: (path: string) => void
 }): React.JSX.Element {
+  const rt = agent.runtime
   return (
     <tr
       title={agent.path}
@@ -27,6 +28,16 @@ function AgentRow({
           </span>
         )}
         {agent.error && <span className="badge danger">unreadable</span>}
+        {rt && !rt.enabled && (
+          <span
+            className="badge muted-badge"
+            title={
+              rt.enabledSource === 'override' ? 'Disabled via launchctl' : 'Disabled key in plist'
+            }
+          >
+            disabled
+          </span>
+        )}
         {!agent.error && !agent.label && <span className="badge warn">no Label</span>}
         {agent.labelMismatch && (
           <span className="badge warn" title={`File name ${agent.fileName} ≠ ${agent.label}.plist`}>
@@ -37,11 +48,20 @@ function AgentRow({
       <td className="col-program mono" title={agent.error ?? programLine(agent)}>
         {agent.error ?? programLine(agent)}
       </td>
-      {/* Status columns are filled in M2 (#14) */}
-      <td className="col-status muted">{PLACEHOLDER}</td>
-      <td className="col-status muted">{PLACEHOLDER}</td>
-      <td className="col-status muted">{PLACEHOLDER}</td>
-      <td className="col-status muted">{PLACEHOLDER}</td>
+      <td className="col-status">
+        {rt?.loaded ? 'yes' : <span className="muted">{rt ? 'no' : PLACEHOLDER}</span>}
+      </td>
+      <td className="col-status">
+        {rt?.running ? (
+          <span className="running">● running</span>
+        ) : (
+          <span className="muted">{rt ? '—' : PLACEHOLDER}</span>
+        )}
+      </td>
+      <td className="col-status mono">{rt?.pid ?? ''}</td>
+      <td className={isFailed(rt) ? 'col-status mono failed' : 'col-status mono'}>
+        {formatExit(rt)}
+      </td>
     </tr>
   )
 }

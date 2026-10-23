@@ -82,11 +82,11 @@
 }
 
 .agent-table .col-program {
-  width: 40%;
+  width: 34%;
 }
 
 .agent-table .col-status {
-  width: 7%;
+  width: 8.5%;
 }
 
 .agent-label {
@@ -310,4 +310,25 @@
 .search:focus {
   outline: 2px solid var(--accent);
   outline-offset: -1px;
+}
+
+.running {
+  color: #1f9d55;
+  font-weight: 500;
+}
+
+.failed {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.banner {
+  padding: 6px 16px;
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

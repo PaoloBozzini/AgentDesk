@@ -6,7 +6,7 @@ import { EMPTY_FILTER, filterAgents, type AgentFilter } from './lib/filter'
 
 function App(): React.JSX.Element {
   const [includeSystem, setIncludeSystem] = useState(false)
-  const { agents, loading, error, revision, reload } = useAgents(includeSystem)
+  const { agents, loading, error, statusError, revision, reload } = useAgents(includeSystem)
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
   const [filter, setFilter] = useState<AgentFilter>(EMPTY_FILTER)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -69,6 +69,11 @@ function App(): React.JSX.Element {
           Show system agents (read-only)
         </label>
       </header>
+      {statusError && (
+        <p className="banner" title={statusError}>
+          Couldn’t read launchd status: {statusError}
+        </p>
+      )}
       <div className="split">
         <main className="content">
           {error ? (

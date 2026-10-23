@@ -17,6 +17,29 @@ export interface AgentSummary {
   format?: PlistFormat
   /** Set when the file could not be read or parsed. */
   error?: string
+  /** The plist's own `Disabled` key, if present. */
+  disabledKey?: boolean
+  /** launchd state; undefined when unknown (no label, or launchctl failed). */
+  runtime?: AgentRuntime
+}
+
+export interface AgentRuntime {
+  loaded: boolean
+  running: boolean
+  pid?: number
+  /** Last exit status; negative = terminated by that signal. */
+  lastExitStatus?: number
+  /** Raw status token from launchctl ("-", "0", "(pe)", …). */
+  statusText?: string
+  enabled: boolean
+  /** Where `enabled` comes from: launchctl override db, the plist's Disabled key, or the default. */
+  enabledSource: 'override' | 'plist' | 'default'
+}
+
+export interface AgentListResult {
+  agents: AgentSummary[]
+  /** Set when launchctl status couldn't be read; agents are still listed. */
+  statusError?: string
 }
 
 export interface AgentDetail {

@@ -1,0 +1,9 @@
+
+	disabled services = {
+		"com.google.keystone.user.xpcservice" => enabled
+		"com.apple.ManagedClientAgent.enrollagent" => disabled
+		"com.agentdesk.test.never" => disabled
+	}
+
+	login item associations = {
+	}
