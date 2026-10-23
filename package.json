@@ -22,7 +22,8 @@
     "test:watch": "vitest",
     "format:check": "prettier --check .",
     "smoke": "electron-vite build && electron -r ./scripts/smoke.cjs .",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "AGENTDESK_INTEGRATION=1 vitest run src/main/services/__integration__"
   },
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",

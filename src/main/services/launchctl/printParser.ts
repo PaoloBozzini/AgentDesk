@@ -83,7 +83,11 @@ function buildStatus(
   }
 
   const pid = toInt(fields['pid'])
-  if (pid !== undefined) status.pid = pid
+  if (pid !== undefined) {
+    status.pid = pid
+    // Spawning shows `state = xpcproxy` with a pid already assigned: that's a live process
+    status.running = true
+  }
   const runs = toInt(fields['runs'])
   if (runs !== undefined) status.runs = runs
 
