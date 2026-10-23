@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react'
 import type { AgentDetail, AgentSummary } from '../../../shared/agent-types'
 import { AgentActions } from './AgentActions'
 import { LogView } from './LogView'
+import { UnifiedLogView } from './UnifiedLogView'
 import { PlistTree } from './PlistTree'
 
-type Tab = 'keys' | 'xml' | 'stdout' | 'stderr'
+type Tab = 'keys' | 'xml' | 'stdout' | 'stderr' | 'system'
 
 const TAB_LABELS: Record<Tab, string> = {
   keys: 'Keys',
   xml: 'Raw XML',
   stdout: 'stdout',
-  stderr: 'stderr'
+  stderr: 'stderr',
+  system: 'System log'
 }
 
 type Load =
@@ -55,6 +57,7 @@ export function AgentDetailPanel({
   const tabs: Tab[] = ['keys', 'xml']
   if (typeof data?.StandardOutPath === 'string') tabs.push('stdout')
   if (typeof data?.StandardErrorPath === 'string') tabs.push('stderr')
+  if (summary?.label) tabs.push('system')
   const activeTab: Tab = tabs.includes(tab) ? tab : 'keys'
 
   return (
@@ -100,6 +103,7 @@ export function AgentDetailPanel({
         {current.status === 'ok' && activeTab === 'xml' && (
           <pre className="xml mono">{current.detail.xml}</pre>
         )}
+        {activeTab === 'system' && <UnifiedLogView key={path} agentPath={path} />}
         {(activeTab === 'stdout' || activeTab === 'stderr') && (
           <LogView key={`${path}:${activeTab}`} agentPath={path} stream={activeTab} />
         )}
