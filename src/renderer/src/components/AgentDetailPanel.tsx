@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { AgentDetail } from '../../../shared/agent-types'
+import type { AgentDetail, AgentSummary } from '../../../shared/agent-types'
+import { AgentActions } from './AgentActions'
 import { PlistTree } from './PlistTree'
 
 type Tab = 'keys' | 'xml'
@@ -11,13 +12,19 @@ type Load =
 
 export function AgentDetailPanel({
   path,
+  agent,
   revision,
-  onClose
+  onClose,
+  onChanged
 }: {
   path: string
+  /** Latest list entry (with runtime) for this path, if any. */
+  agent?: AgentSummary
   /** Re-read the file when this changes (list refreshed). */
   revision: number
   onClose: () => void
+  /** An action ran: refresh the list. */
+  onChanged: () => void
 }): React.JSX.Element {
   const [tab, setTab] = useState<Tab>('keys')
   const [load, setLoad] = useState<Load>({ status: 'loading', path })
@@ -51,6 +58,7 @@ export function AgentDetailPanel({
         </button>
       </header>
 
+      {agent && <AgentActions key={agent.path} agent={agent} onDone={onChanged} />}
       {summary?.readOnly && <p className="notice">System agent: read-only</p>}
       {summary?.format === 'binary' && (
         <p className="notice">Binary plist: XML below is a normalized view of the file.</p>

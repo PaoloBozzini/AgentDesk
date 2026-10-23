@@ -89,7 +89,9 @@ function App(): React.JSX.Element {
         {selectedPath && (
           <AgentDetailPanel
             path={selectedPath}
+            agent={agents.find((a) => a.path === selectedPath)}
             revision={revision}
+            onChanged={reload}
             onClose={() => setSelectedPath(null)}
           />
         )}
