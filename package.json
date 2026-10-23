@@ -20,7 +20,8 @@
     "build:mac": "npm run build && electron-builder --mac",
     "test": "vitest run",
     "test:watch": "vitest",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "smoke": "electron-vite build && electron -r ./scripts/smoke.cjs ."
   },
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",
