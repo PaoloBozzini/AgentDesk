@@ -1,4 +1,4 @@
-import type { PlistFormat } from './plist-types'
+import type { PlistDict, PlistFormat } from './plist-types'
 
 export type AgentScope = 'user' | 'global-agent' | 'global-daemon'
 
@@ -17,4 +17,11 @@ export interface AgentSummary {
   format?: PlistFormat
   /** Set when the file could not be read or parsed. */
   error?: string
+}
+
+export interface AgentDetail {
+  summary: AgentSummary
+  data: PlistDict
+  /** Original XML, or normalized XML when the file is binary. */
+  xml: string
 }

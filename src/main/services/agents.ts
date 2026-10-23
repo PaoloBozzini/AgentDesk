@@ -1,7 +1,7 @@
 import { readdir } from 'fs/promises'
 import { homedir } from 'os'
-import { join } from 'path'
-import type { AgentScope, AgentSummary } from '../../shared/agent-types'
+import { basename, dirname, isAbsolute, join, resolve } from 'path'
+import type { AgentDetail, AgentScope, AgentSummary } from '../../shared/agent-types'
 import { readPlistFile, type PlistDict } from './plist'
 
 export interface AgentDir {
@@ -79,4 +79,39 @@ export function sortAgents(agents: AgentSummary[]): AgentSummary[] {
 export async function listAgents(dirs: AgentDir[]): Promise<AgentSummary[]> {
   const all = await Promise.all(dirs.map(listDir))
   return sortAgents(all.flat())
+}
+
+export class AgentPathError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'AgentPathError'
+  }
+}
+
+/**
+ * Renderer-supplied paths are untrusted: accept only a `.plist` file that sits
+ * directly inside one of the known agent folders.
+ */
+export function resolveAgentFile(path: unknown, dirs: AgentDir[]): AgentDir & { path: string } {
+  if (typeof path !== 'string' || path.includes('\0') || !isAbsolute(path)) {
+    throw new AgentPathError('Agent path must be an absolute path')
+  }
+  const normalized = resolve(path)
+  const name = basename(normalized)
+  const match = dirs.find((d) => resolve(d.dir) === dirname(normalized))
+  if (!match || !name.endsWith('.plist') || name.startsWith('.')) {
+    throw new AgentPathError(`Not an agent file: ${path}`)
+  }
+  return { ...match, path: normalized }
+}
+
+export async function readAgent(path: unknown, dirs: AgentDir[]): Promise<AgentDetail> {
+  const file = resolveAgentFile(path, dirs)
+  const fileName = basename(file.path)
+  const parsed = await readPlistFile(file.path)
+  return {
+    summary: { ...summarize(file.path, fileName, file.scope, parsed.data), format: parsed.format },
+    data: parsed.data,
+    xml: parsed.xml
+  }
 }

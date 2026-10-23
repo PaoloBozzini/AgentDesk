@@ -2,7 +2,14 @@ import { chmod, mkdtemp, mkdir, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { listAgents, summarize, userAgentsDir } from './agents'
+import {
+  AgentPathError,
+  listAgents,
+  readAgent,
+  resolveAgentFile,
+  summarize,
+  userAgentsDir
+} from './agents'
 import { serializePlist } from './plist'
 
 describe('summarize', () => {
@@ -87,5 +94,48 @@ describe('listAgents', () => {
 
   it('returns an empty list when the folder is missing', async () => {
     await expect(listAgents([{ dir: join(base, 'nope'), scope: 'user' }])).resolves.toEqual([])
+  })
+})
+
+describe('resolveAgentFile', () => {
+  const dirs = [
+    { dir: '/Users/x/Library/LaunchAgents', scope: 'user' as const },
+    { dir: '/Library/LaunchDaemons', scope: 'global-daemon' as const }
+  ]
+
+  it('accepts a plist directly inside a known folder', () => {
+    expect(resolveAgentFile('/Users/x/Library/LaunchAgents/com.a.plist', dirs)).toMatchObject({
+      scope: 'user',
+      path: '/Users/x/Library/LaunchAgents/com.a.plist'
+    })
+    expect(resolveAgentFile('/Library/LaunchDaemons/com.a.plist', dirs).scope).toBe('global-daemon')
+  })
+
+  it.each([
+    ['traversal', '/Users/x/Library/LaunchAgents/../../.ssh/id_rsa.plist'],
+    ['nested', '/Users/x/Library/LaunchAgents/sub/com.a.plist'],
+    ['other folder', '/etc/com.a.plist'],
+    ['not a plist', '/Users/x/Library/LaunchAgents/notes.txt'],
+    ['hidden', '/Users/x/Library/LaunchAgents/.x.plist'],
+    ['relative', 'Library/LaunchAgents/com.a.plist'],
+    ['NUL', '/Users/x/Library/LaunchAgents/a\0.plist'],
+    ['non-string', 42]
+  ])('rejects %s', (_n, p) => {
+    expect(() => resolveAgentFile(p, dirs)).toThrow(AgentPathError)
+  })
+})
+
+describe('readAgent', () => {
+  it('returns summary, data and original xml', async () => {
+    const base = await mkdtemp(join(tmpdir(), 'agentdesk-read-'))
+    const dir = userAgentsDir(base)
+    await mkdir(dir, { recursive: true })
+    const xml = serializePlist({ Label: 'com.a', RunAtLoad: true })
+    await writeFile(join(dir, 'com.a.plist'), xml)
+    const detail = await readAgent(join(dir, 'com.a.plist'), [{ dir, scope: 'user' }])
+    expect(detail.summary.label).toBe('com.a')
+    expect(detail.data.RunAtLoad).toBe(true)
+    expect(detail.xml).toBe(xml)
+    await rm(base, { recursive: true, force: true })
   })
 })

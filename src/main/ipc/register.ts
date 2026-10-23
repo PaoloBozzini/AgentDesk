@@ -2,7 +2,7 @@ import { app, ipcMain, type IpcMainInvokeEvent } from 'electron'
 import { join } from 'path'
 import { IpcChannel, type AppInfo, type IpcChannelName } from '../../shared/ipc-contract'
 import { isTrustedRendererUrl } from '../security/policy'
-import { listAgents, userAgentsDir } from '../services/agents'
+import { listAgents, readAgent, SYSTEM_AGENT_DIRS, userAgentsDir } from '../services/agents'
 
 const rendererIndexPath = join(__dirname, '../renderer/index.html')
 
@@ -38,4 +38,7 @@ export function registerIpcHandlers(): void {
   }))
 
   handle(IpcChannel.AgentsList, () => listAgents([{ dir: userAgentsDir(), scope: 'user' }]))
+  handle(IpcChannel.AgentsRead, (_e, path) =>
+    readAgent(path, [{ dir: userAgentsDir(), scope: 'user' }, ...SYSTEM_AGENT_DIRS])
+  )
 }
