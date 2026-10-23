@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AgentRuntime } from '../../../shared/agent-types'
-import { formatExit, isFailed, signalName } from './format'
+import { formatExit, formatLogTime, isFailed, signalName } from './format'
 
 const rt = (extra: Partial<AgentRuntime>): AgentRuntime => ({
   loaded: true,
@@ -39,5 +39,13 @@ describe('isFailed', () => {
 describe('signalName', () => {
   it('names common signals', () => {
     expect(signalName(15)).toBe('SIGTERM')
+  })
+})
+
+describe('formatLogTime', () => {
+  it('shortens unified log timestamps', () => {
+    expect(formatLogTime('2026-10-23 22:40:24.714501+0200')).toBe('10-23 22:40:24.714')
+    expect(formatLogTime('2026-10-23 22:40:24+0200')).toBe('10-23 22:40:24')
+    expect(formatLogTime('garbage')).toBe('garbage')
   })
 })

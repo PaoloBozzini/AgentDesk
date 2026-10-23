@@ -1,6 +1,6 @@
 import type { AgentDetail, AgentListResult } from './agent-types'
 import type { ActionResult, AgentAction } from './control-types'
-import type { LogEvent, LogStream, TailStart } from './log-types'
+import type { LogEvent, LogStream, LogWindow, TailStart, UnifiedLogStart } from './log-types'
 
 /**
  * Single source of truth for the renderer <-> main API.
@@ -15,7 +15,8 @@ export const IpcChannel = {
   AgentsRead: 'agents:read',
   AgentsControl: 'agents:control',
   SubscriptionDispose: 'subscription:dispose',
-  LogsTailFile: 'logs:tail-file'
+  LogsTailFile: 'logs:tail-file',
+  LogsShow: 'logs:show'
 } as const
 
 /** Main -> renderer notifications. */
@@ -42,6 +43,8 @@ export interface AgentDeskApi {
   logs: {
     /** Live tail of the agent's StandardOutPath / StandardErrorPath. */
     tailFile(agentPath: string, stream: LogStream): Promise<TailStart>
+    /** `log show --last <window>` for the agent; lines arrive as events. */
+    show(agentPath: string, window: LogWindow): Promise<UnifiedLogStart>
     /** All log subscription events; filter by `id`. Returns an unsubscribe function. */
     onEvent(callback: (event: LogEvent) => void): () => void
   }

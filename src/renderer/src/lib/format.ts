@@ -38,3 +38,9 @@ export function isFailed(runtime: AgentRuntime | undefined): boolean {
     runtime?.loaded && runtime.lastExitStatus !== undefined && runtime.lastExitStatus !== 0
   )
 }
+
+/** "2026-10-23 22:40:24.714501+0200" → "10-23 22:40:24.714" (unparseable input returned as-is). */
+export function formatLogTime(timestamp: string): string {
+  const m = /^\d{4}-(\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})(\.\d{3})?/.exec(timestamp)
+  return m ? `${m[1]} ${m[2]}${m[3] ?? ''}` : timestamp
+}

@@ -11,8 +11,9 @@ export type LogEvent =
   | { id: string; kind: 'reset'; text: string; truncated: boolean }
   | { id: string; kind: 'append'; text: string }
   | { id: string; kind: 'status'; status: FileStatus }
-  | { id: string; kind: 'line'; line: UnifiedLogLine }
-  | { id: string; kind: 'end'; error?: string }
+  | { id: string; kind: 'lines'; lines: UnifiedLogLine[] }
+  | { id: string; kind: 'progress'; done: number; total: number }
+  | { id: string; kind: 'end'; count: number; truncated: boolean; error?: string }
 
 export interface UnifiedLogLine {
   timestamp: string
@@ -27,3 +28,8 @@ export interface UnifiedLogLine {
 export type TailStart =
   | { ok: true; id: string; path: string }
   | { ok: false; reason: 'not-set' | 'relative-path' | 'error'; message: string }
+
+export type LogWindow = '15m' | '1h' | '24h'
+
+export type UnifiedLogStart =
+  { ok: true; id: string; predicate: string; note?: string } | { ok: false; message: string }

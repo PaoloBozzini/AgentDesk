@@ -8,6 +8,8 @@ import { agentDirsFor, listAgents, readAgent, userAgentsDir } from '../services/
 import { controlAgent } from '../services/control'
 import { registry, trackOwner } from '../services/registry'
 import { isLogStream, startFileTail } from '../services/logs/tailService'
+import { isLogWindow } from '../services/logs/unifiedLog'
+import { startUnifiedLog } from '../services/logs/unifiedLogService'
 import { Launchctl } from '../services/launchctl/runner'
 import { attachRuntime, readDomains } from '../services/status'
 
@@ -66,6 +68,23 @@ export function registerIpcHandlers(): void {
         if (!sender.isDestroyed()) sender.send(IpcEvent.LogsEvent, e)
       }
     })
+  })
+
+  handle(IpcChannel.LogsShow, (event, agentPath, window) => {
+    if (!isLogWindow(window)) throw new Error('Invalid window')
+    const sender = event.sender
+    return startUnifiedLog(
+      agentPath,
+      { kind: 'show', window },
+      {
+        dirs: agentDirsFor({ includeSystem: true }),
+        registry,
+        owner: sender.id,
+        send: (e) => {
+          if (!sender.isDestroyed()) sender.send(IpcEvent.LogsEvent, e)
+        }
+      }
+    )
   })
 
   const launchctl = new Launchctl({ uid: process.getuid!() })
