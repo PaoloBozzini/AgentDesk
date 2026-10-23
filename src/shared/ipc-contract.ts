@@ -1,4 +1,5 @@
 import type { AgentDetail, AgentListResult } from './agent-types'
+import type { ActionResult, AgentAction } from './control-types'
 
 /**
  * Single source of truth for the renderer <-> main API.
@@ -9,7 +10,8 @@ import type { AgentDetail, AgentListResult } from './agent-types'
 export const IpcChannel = {
   AppGetInfo: 'app:get-info',
   AgentsList: 'agents:list',
-  AgentsRead: 'agents:read'
+  AgentsRead: 'agents:read',
+  AgentsControl: 'agents:control'
 } as const
 
 /** Main -> renderer notifications. */
@@ -38,6 +40,8 @@ export interface AgentDeskApi {
   agents: {
     list(options?: ListAgentsOptions): Promise<AgentListResult>
     read(path: string): Promise<AgentDetail>
+    /** launchctl action on a user agent. Never rejects for launchctl failures: see ActionResult. */
+    control(path: string, action: AgentAction): Promise<ActionResult>
     /** Called when files in ~/Library/LaunchAgents change. Returns an unsubscribe function. */
     onChanged(callback: () => void): () => void
   }

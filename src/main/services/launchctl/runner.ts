@@ -140,8 +140,8 @@ export class Launchctl {
   }
 
   /** Runs launchctl; resolves with stdout, rejects with LaunchctlError on any failure. */
-  async run(args: string[]): Promise<string> {
-    const result = await this.exec(LAUNCHCTL, args, this.timeoutMs)
+  async run(args: string[], options: { timeoutMs?: number } = {}): Promise<string> {
+    const result = await this.exec(LAUNCHCTL, args, options.timeoutMs ?? this.timeoutMs)
     if (result.code !== 0 || result.timedOut) throw new LaunchctlError(args, result)
     return result.stdout
   }

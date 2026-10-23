@@ -3,7 +3,9 @@ import { join } from 'path'
 import { IpcChannel, type AppInfo, type IpcChannelName } from '../../shared/ipc-contract'
 import { isTrustedRendererUrl } from '../security/policy'
 import type { AgentListResult } from '../../shared/agent-types'
-import { agentDirsFor, listAgents, readAgent } from '../services/agents'
+import { isAgentAction } from '../../shared/control-types'
+import { agentDirsFor, listAgents, readAgent, userAgentsDir } from '../services/agents'
+import { controlAgent } from '../services/control'
 import { Launchctl } from '../services/launchctl/runner'
 import { attachRuntime, readDomains } from '../services/status'
 
@@ -55,4 +57,12 @@ export function registerIpcHandlers(): void {
   handle(IpcChannel.AgentsRead, (_e, path) =>
     readAgent(path, agentDirsFor({ includeSystem: true }))
   )
+
+  handle(IpcChannel.AgentsControl, (_e, path, action) => {
+    if (!isAgentAction(action)) throw new Error('Unknown action')
+    return controlAgent(path, action, {
+      launchctl,
+      writableDirs: [{ dir: userAgentsDir(), scope: 'user' }]
+    })
+  })
 }
