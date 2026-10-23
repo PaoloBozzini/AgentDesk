@@ -1,4 +1,4 @@
-import { app, clipboard, ipcMain, type IpcMainInvokeEvent } from 'electron'
+import { app, clipboard, ipcMain, type IpcMainInvokeEvent, type WebContents } from 'electron'
 import { join } from 'path'
 import { IpcChannel, IpcEvent, type AppInfo, type IpcChannelName } from '../../shared/ipc-contract'
 import { isTrustedRendererUrl } from '../security/policy'
@@ -9,7 +9,7 @@ import { controlAgent } from '../services/control'
 import { registry, trackOwner } from '../services/registry'
 import { isLogStream, startFileTail } from '../services/logs/tailService'
 import { isLogWindow } from '../services/logs/unifiedLog'
-import { startUnifiedLog } from '../services/logs/unifiedLogService'
+import { startUnifiedLog, type UnifiedLogDeps } from '../services/logs/unifiedLogService'
 import { Launchctl } from '../services/launchctl/runner'
 import { attachRuntime, readDomains } from '../services/status'
 
@@ -57,35 +57,29 @@ export function registerIpcHandlers(): void {
     if (typeof id === 'string' && registry.owns(id, event.sender.id)) registry.dispose(id)
   })
 
+  /** Log subscriptions: readable for every agent folder, owned by the calling window. */
+  const subscriber = (sender: WebContents): UnifiedLogDeps => ({
+    dirs: agentDirsFor({ includeSystem: true }),
+    registry,
+    owner: sender.id,
+    send: (e) => {
+      if (!sender.isDestroyed()) sender.send(IpcEvent.LogsEvent, e)
+    }
+  })
+
   handle(IpcChannel.LogsTailFile, (event, agentPath, stream) => {
     if (!isLogStream(stream)) throw new Error('Invalid stream')
-    const sender = event.sender
-    return startFileTail(agentPath, stream, {
-      dirs: agentDirsFor({ includeSystem: true }),
-      registry,
-      owner: sender.id,
-      send: (e) => {
-        if (!sender.isDestroyed()) sender.send(IpcEvent.LogsEvent, e)
-      }
-    })
+    return startFileTail(agentPath, stream, subscriber(event.sender))
   })
 
   handle(IpcChannel.LogsShow, (event, agentPath, window) => {
     if (!isLogWindow(window)) throw new Error('Invalid window')
-    const sender = event.sender
-    return startUnifiedLog(
-      agentPath,
-      { kind: 'show', window },
-      {
-        dirs: agentDirsFor({ includeSystem: true }),
-        registry,
-        owner: sender.id,
-        send: (e) => {
-          if (!sender.isDestroyed()) sender.send(IpcEvent.LogsEvent, e)
-        }
-      }
-    )
+    return startUnifiedLog(agentPath, { kind: 'show', window }, subscriber(event.sender))
   })
+
+  handle(IpcChannel.LogsStream, (event, agentPath) =>
+    startUnifiedLog(agentPath, { kind: 'stream' }, subscriber(event.sender))
+  )
 
   const launchctl = new Launchctl({ uid: process.getuid!() })
 

@@ -57,9 +57,11 @@ function Results({
       <div className="log-status">
         <span>
           {running
-            ? partial
-              ? `${lines.length} entries so far. Still searching launchd’s messages (can take up to a minute for 24 h)…`
-              : `Reading the system log… ${lines.length} entries`
+            ? request.kind === 'stream'
+              ? `Live: ${lines.length + dropped} entries since start. Waiting for new ones…`
+              : partial
+                ? `${lines.length} entries so far. Still searching launchd’s messages (can take up to a minute for 24 h)…`
+                : `Reading the system log… ${lines.length} entries`
             : error
               ? ''
               : `${lines.length + dropped} entries${truncated ? ' (stopped at the limit)' : ''}${dropped ? `, showing the latest ${lines.length}` : ''}`}
@@ -67,7 +69,9 @@ function Results({
       </div>
       {error && <p className="state error">{error}</p>}
       {!running && !error && lines.length === 0 ? (
-        <p className="state">No entries in this time window.</p>
+        <p className="state">
+          {request.kind === 'stream' ? 'Stream ended.' : 'No entries in this time window.'}
+        </p>
       ) : (
         <LogRows lines={lines} />
       )}
@@ -84,7 +88,9 @@ function Results({
 export function UnifiedLogView({ agentPath }: { agentPath: string }): React.JSX.Element {
   const [window, setWindow] = useState<LogWindow>('1h')
   const [nonce, setNonce] = useState(0)
-  const request: UnifiedLogRequest = { kind: 'show', window, nonce }
+  const [live, setLive] = useState(false)
+  const request: UnifiedLogRequest = live ? { kind: 'stream' } : { kind: 'show', window, nonce }
+  const key = live ? `${agentPath}:live` : `${agentPath}:${window}:${nonce}`
 
   return (
     <div className="log-view">
@@ -93,19 +99,34 @@ export function UnifiedLogView({ agentPath }: { agentPath: string }): React.JSX.
           {WINDOWS.map((w) => (
             <button
               key={w}
-              className={w === window ? 'chip active' : 'chip'}
-              aria-pressed={w === window}
-              onClick={() => setWindow(w)}
+              className={!live && w === window ? 'chip active' : 'chip'}
+              aria-pressed={!live && w === window}
+              onClick={() => {
+                setLive(false)
+                setWindow(w)
+              }}
             >
               Last {w}
             </button>
           ))}
         </div>
-        <button className="button" onClick={() => setNonce((n) => n + 1)}>
-          Refresh
-        </button>
+        <div className="segmented">
+          {!live && (
+            <button className="button" onClick={() => setNonce((n) => n + 1)}>
+              Refresh
+            </button>
+          )}
+          <button
+            className={live ? 'button live active' : 'button live'}
+            aria-pressed={live}
+            onClick={() => setLive((l) => !l)}
+            title={live ? 'Stop the live stream' : 'Stream new entries as they are logged'}
+          >
+            {live ? '■ Stop live' : '● Live'}
+          </button>
+        </div>
       </div>
-      <Results key={`${agentPath}:${window}:${nonce}`} agentPath={agentPath} request={request} />
+      <Results key={key} agentPath={agentPath} request={request} />
     </div>
   )
 }
