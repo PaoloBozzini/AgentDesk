@@ -102,6 +102,11 @@ describe('parsePrintService (robustness)', () => {
     expect(() => parsePrintService(text)).not.toThrow()
   })
 
+  it('treats a pid during spawn (state = xpcproxy, seen right after kickstart) as running', () => {
+    const s = parsePrintService('gui/501/x = {\n\tstate = xpcproxy\n\tpid = 8048\n}')
+    expect(s).toMatchObject({ state: 'xpcproxy', running: true, pid: 8048 })
+  })
+
   it('accepts CRLF and space indentation', () => {
     const s = parsePrintService('gui/501/x = {\r\n    state = running\r\n    pid = 5\r\n}\r\n')
     expect(s).toMatchObject({ label: 'x', running: true, pid: 5 })

@@ -29,3 +29,18 @@ jobs:
       - run: npm test
       - name: Build and smoke-launch the app
         run: npm run smoke
+
+  integration:
+    # Real launchd on the runner; only com.agentdesk.test.* labels, guarded.
+    # Non-blocking until it has proven stable on GitHub's macOS runners.
+    runs-on: macos-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:integration
