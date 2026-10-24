@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.__USER__.downloads-cleanup</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/zsh</string>
+		<string>__HOME__/Library/Scripts/AgentDesk/downloads-cleanup.sh</string>
+	</array>
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Weekday</key>
+		<integer>1</integer>
+		<key>Hour</key>
+		<integer>10</integer>
+		<key>Minute</key>
+		<integer>0</integer>
+	</dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>MODE</key>
+		<string>report</string>
+		<key>OLDER_THAN_DAYS</key>
+		<string>30</string>
+	</dict>
+	<key>StandardOutPath</key>
+	<string>__HOME__/Library/Logs/com.__USER__.downloads-cleanup/stdout.log</string>
+	<key>StandardErrorPath</key>
+	<string>__HOME__/Library/Logs/com.__USER__.downloads-cleanup/stderr.log</string>
+</dict>
+</plist>
