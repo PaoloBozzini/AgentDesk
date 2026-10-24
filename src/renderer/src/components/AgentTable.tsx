@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { AgentSummary } from '../../../shared/agent-types'
 import { formatExit, isFailed, programLine } from '../lib/format'
 
@@ -13,8 +14,14 @@ function AgentRow({
   onSelect: (path: string) => void
 }): React.JSX.Element {
   const rt = agent.runtime
+  const ref = useRef<HTMLTableRowElement>(null)
+  // Keep the selected row visible during keyboard navigation
+  useEffect(() => {
+    if (selected) ref.current?.scrollIntoView({ block: 'nearest' })
+  }, [selected])
   return (
     <tr
+      ref={ref}
       title={agent.path}
       className={selected ? 'selected' : undefined}
       aria-selected={selected}
@@ -69,14 +76,17 @@ function AgentRow({
 export function AgentTable({
   agents,
   selectedPath,
-  onSelect
+  onSelect,
+  compact = false
 }: {
   agents: AgentSummary[]
   selectedPath: string | null
   onSelect: (path: string) => void
+  /** Detail panel open: drop the Program column so status columns keep their width. */
+  compact?: boolean
 }): React.JSX.Element {
   return (
-    <table className="agent-table">
+    <table className={compact ? 'agent-table compact' : 'agent-table'}>
       <thead>
         <tr>
           <th className="col-label">Label</th>

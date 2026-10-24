@@ -872,3 +872,30 @@
   background: var(--danger);
   filter: brightness(1.1);
 }
+
+.agent-table.compact .col-program {
+  display: none;
+}
+
+.agent-table.compact .col-label {
+  width: auto;
+}
+
+.agent-table.compact .col-status {
+  width: 64px;
+}
+
+.empty-action {
+  margin-top: 12px;
+}
+
+button:focus-visible,
+.template-card:focus-visible,
+tr:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.agent-form input[inputmode='numeric'] {
+  max-width: 180px;
+}

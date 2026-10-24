@@ -116,9 +116,13 @@ export function AgentDetailPanel({
       <div className="detail-body">
         {current.status === 'loading' && <p className="state">Loading…</p>}
         {current.status === 'error' && <p className="state error">{current.message}</p>}
-        {current.status === 'ok' && activeTab === 'keys' && (
-          <PlistTree dict={current.detail.data} />
-        )}
+        {current.status === 'ok' &&
+          activeTab === 'keys' &&
+          (Object.keys(current.detail.data).length === 0 ? (
+            <p className="state">This plist has no keys.</p>
+          ) : (
+            <PlistTree dict={current.detail.data} />
+          ))}
         {current.status === 'ok' && activeTab === 'xml' && (
           <pre className="xml mono">{current.detail.xml}</pre>
         )}
