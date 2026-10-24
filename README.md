@@ -5,7 +5,7 @@ A macOS app for the jobs in `~/Library/LaunchAgents`: see what's loaded and runn
 - **List** every user agent with launchd's live state (loaded, running, PID, last exit), filter by status, search by label. System agents and daemons can be shown read-only.
 - **Inspect** an agent: its keys, the raw XML, live `stdout` / `stderr` tails and the unified system log (`log show` / live `log stream`).
 - **Control** it: load, unload, start, restart, reload, enable, disable. Failures explain what went wrong and show the exact `launchctl` command.
-- **Create** an agent from a template (run at login, every N minutes, on a schedule, when a path changes, keep alive) with a form or raw XML.
+- **Create** an agent from a template (run at login, every N minutes, on a schedule, when a path changes, keep alive): write its script right in the app, point it at a program, or edit the raw XML.
 - **Edit** in the form or the XML editor, review a diff, save. The old file is backed up first; if the agent is loaded you're offered a reload.
 - **Delete** safely: unloaded, backed up, moved to the Trash.
 
@@ -35,7 +35,7 @@ xattr -dr com.apple.quarantine "/Applications/Agent Desk.app"
 
 - **Status filters** (All, Loaded, Running, Failed, Not loaded) sit under the toolbar. _Show system agents_ adds `/Library/LaunchAgents` and `/Library/LaunchDaemons`, read-only.
 - Select an agent for its details. The action buttons only offer what makes sense for its state.
-- **New agent**: pick a template; the label is suggested as `com.<you>.<name>` and logs go to `~/Library/Logs/<label>/`. The file is checked with `plutil -lint` and written as `~/Library/LaunchAgents/<Label>.plist` (an existing file is never overwritten). Tick _Load now_ to start it right away.
+- **New agent**: pick a template, set the label (suggested as `com.<you>.<name>`), write your commands in the **Script** box, Create. The script is stored in the plist (`/bin/zsh -c …`, or bash / sh) and checked for syntax errors first. New agents get a `PATH` that includes Homebrew and one log file, `~/Library/Logs/<label>/output.log`, shown in the **Output** tab. To run an existing executable instead, switch the Command to **Program**. The file is checked with `plutil -lint` and written as `~/Library/LaunchAgents/<Label>.plist` (an existing file is never overwritten). Tick _Load now_ to start it right away.
 - **Edit…**: switch between **Form** and **XML** at any time; keys the form doesn't know are kept as they are. **Review changes…** shows a side-by-side diff before saving. The Label can't be changed (it's the file name and launchd's identity).
 - **Delete…** shows the label and full path, then unloads, backs up and moves the file to the Trash.
 - **Backups** opens `~/Library/Application Support/Agent Desk/backups/`, where every edited or deleted file is copied first (`<label>/<timestamp>.plist`).
