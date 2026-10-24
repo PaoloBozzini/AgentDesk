@@ -14,7 +14,9 @@ const NO_SHELL = CHILD_PROCESS.map((name) => ({
 }))
 const NO_SHELL_SYNTAX = [
   {
-    selector: "Property[key.name='shell'][value.type='Literal'][value.value!=false]",
+    // options objects passed to execFile / spawn / fork / …
+    selector:
+      "CallExpression > ObjectExpression > Property[key.name='shell'][value.type='Literal'][value.value!=false]",
     message: 'Never run processes through a shell (shell must be false or absent).'
   }
 ]

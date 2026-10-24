@@ -7,11 +7,12 @@ import { LogView } from './LogView'
 import { UnifiedLogView } from './UnifiedLogView'
 import { PlistTree } from './PlistTree'
 
-type Tab = 'keys' | 'xml' | 'stdout' | 'stderr' | 'system'
+type Tab = 'keys' | 'xml' | 'output' | 'stdout' | 'stderr' | 'system'
 
 const TAB_LABELS: Record<Tab, string> = {
   keys: 'Keys',
   xml: 'Raw XML',
+  output: 'Output',
   stdout: 'stdout',
   stderr: 'stderr',
   system: 'System log'
@@ -60,8 +61,14 @@ export function AgentDetailPanel({
   const summary = current.status === 'ok' ? current.detail.summary : undefined
   const data = current.status === 'ok' ? current.detail.data : undefined
   const tabs: Tab[] = ['keys', 'xml']
-  if (typeof data?.StandardOutPath === 'string') tabs.push('stdout')
-  if (typeof data?.StandardErrorPath === 'string') tabs.push('stderr')
+  const outPath = typeof data?.StandardOutPath === 'string' ? data.StandardOutPath : undefined
+  const errPath = typeof data?.StandardErrorPath === 'string' ? data.StandardErrorPath : undefined
+  if (outPath && outPath === errPath) {
+    tabs.push('output') // both streams go to one file
+  } else {
+    if (outPath) tabs.push('stdout')
+    if (errPath) tabs.push('stderr')
+  }
   if (summary?.label) tabs.push('system')
   const activeTab: Tab = tabs.includes(tab) ? tab : 'keys'
 
@@ -127,8 +134,12 @@ export function AgentDetailPanel({
           <pre className="xml mono">{current.detail.xml}</pre>
         )}
         {activeTab === 'system' && <UnifiedLogView key={path} agentPath={path} />}
-        {(activeTab === 'stdout' || activeTab === 'stderr') && (
-          <LogView key={`${path}:${activeTab}`} agentPath={path} stream={activeTab} />
+        {(activeTab === 'stdout' || activeTab === 'stderr' || activeTab === 'output') && (
+          <LogView
+            key={`${path}:${activeTab}`}
+            agentPath={path}
+            stream={activeTab === 'stderr' ? 'stderr' : 'stdout'}
+          />
         )}
       </div>
       {editing && editing.summary.path === path && (

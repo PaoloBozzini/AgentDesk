@@ -899,3 +899,55 @@ tr:focus-visible {
 .agent-form input[inputmode='numeric'] {
   max-width: 180px;
 }
+
+/* Script mode */
+.command-modes {
+  margin-bottom: 10px;
+}
+
+.script-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.script-editor {
+  height: 180px;
+  min-height: 120px;
+  resize: vertical;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  user-select: text;
+}
+
+.script-editor.has-error {
+  border-color: var(--danger);
+}
+
+pre.field-error {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.more-options {
+  margin-bottom: 18px;
+}
+
+.more-options > summary {
+  margin-bottom: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.more-options[open] > summary {
+  margin-bottom: 14px;
+}
+
+.agent-form .toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}

@@ -20,6 +20,7 @@ import { controlAgent } from '../services/control'
 import { backupsDir, revealBackups } from '../services/backup'
 import { appSupportDir, writeRootsFor } from '../services/paths'
 import { saveAgent } from '../services/save'
+import { checkScriptSyntax } from '../services/scriptCheck'
 import { lintPlist } from '../services/plutil'
 import { registry, trackOwner } from '../services/registry'
 import { isLogStream, startFileTail } from '../services/logs/tailService'
@@ -140,6 +141,7 @@ export function registerIpcHandlers(): void {
       agentsDir: userAgentsDir(),
       roots: writeRootsFor(homedir()),
       lint,
+      checkScript: (shell, script) => checkScriptSyntax(shell, script),
       load: (path) => controlAgent(path, 'load', { launchctl, writableDirs: userWritable() })
     })
   )
@@ -151,7 +153,8 @@ export function registerIpcHandlers(): void {
       writableDirs: userWritable(),
       roots: writeRootsFor(homedir()),
       backupDir: backupsDir(homedir()),
-      lint
+      lint,
+      checkScript: (shell, script) => checkScriptSyntax(shell, script)
     })
   )
 

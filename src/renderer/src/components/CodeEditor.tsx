@@ -10,24 +10,30 @@ import {
   lineNumbers
 } from '@codemirror/view'
 import { useEffect, useRef } from 'react'
-import { shadowContainer, xmlLook } from '../lib/codemirror'
+import { codeLook, shadowContainer, type CodeLanguage } from '../lib/codemirror'
 
 /**
- * Plist XML editor, mounted in a shadow root (see shadowContainer).
+ * Code editor (plist XML or shell script), mounted in a shadow root (see shadowContainer).
  *
  * Uncontrolled inside (CodeMirror owns the text): `value` changes from outside
  * replace the document, edits are reported via onChange.
  */
-export function XmlEditor({
+export function CodeEditor({
   value,
   onChange,
+  language = 'xml',
   readOnly = false,
-  ariaLabel = 'Plist XML'
+  ariaLabel = 'Plist XML',
+  className = 'xml-editor',
+  invalid = false
 }: {
   value: string
   onChange?: (value: string) => void
+  language?: CodeLanguage
   readOnly?: boolean
   ariaLabel?: string
+  className?: string
+  invalid?: boolean
 }): React.JSX.Element {
   const host = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView | null>(null)
@@ -51,7 +57,7 @@ export function XmlEditor({
           history(),
           indentOnInput(),
           bracketMatching(),
-          xmlLook(),
+          codeLook(language),
           EditorState.readOnly.of(readOnly),
           EditorView.contentAttributes.of({ 'aria-label': ariaLabel }),
           keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
@@ -68,7 +74,7 @@ export function XmlEditor({
     }
     // Created once per mount; value updates are applied below
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readOnly, ariaLabel])
+  }, [readOnly, ariaLabel, language])
 
   useEffect(() => {
     const v = view.current
@@ -77,5 +83,11 @@ export function XmlEditor({
     }
   }, [value])
 
-  return <div className="xml-editor" ref={host} />
+  return (
+    <div
+      className={invalid ? `${className} has-error` : className}
+      ref={host}
+      aria-invalid={invalid}
+    />
+  )
 }

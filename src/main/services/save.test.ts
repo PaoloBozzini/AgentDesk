@@ -7,6 +7,7 @@ import { backupsDir } from './backup'
 import { writeRootsFor } from './paths'
 import { parsePlistXml, serializePlist } from './plist'
 import { saveAgent, type SaveDeps } from './save'
+import { checkScriptSyntax } from './scriptCheck'
 
 const hooks = vi.hoisted(() => ({ beforeLogDirs: undefined as undefined | (() => Promise<void>) }))
 vi.mock('./logDirs', async (importOriginal) => {
@@ -42,7 +43,8 @@ beforeEach(async () => {
     writableDirs: [{ dir: agentsDir, scope: 'user' }],
     roots: writeRootsFor(home),
     backupDir: backupsDir(home),
-    lint: vi.fn(async () => ({ ok: true, message: 'OK' }))
+    lint: vi.fn(async () => ({ ok: true, message: 'OK' })),
+    checkScript: (shell, script) => checkScriptSyntax(shell, script)
   }
 })
 
@@ -199,5 +201,20 @@ describe('saveAgent keeps <real> (#42)', () => {
     const saved = await readFile(file, 'utf8')
     expect(saved).toContain('<real>2.0</real>')
     expect(saved).toBe(xml.replace('<true/>', '<false/>'))
+  })
+})
+
+describe('saveAgent script check', () => {
+  it('refuses a script with a syntax error and keeps the file', async () => {
+    const before = await readFile(file, 'utf8')
+    const result = await saveAgent(
+      file,
+      { data: { Label: 'com.t.edit', ProgramArguments: ['/bin/zsh', '-c', 'echo "unclosed'] } },
+      { baseHash: await hash() },
+      deps
+    )
+    expect(result).toMatchObject({ ok: false, fieldErrors: { script: expect.any(String) } })
+    expect(await readFile(file, 'utf8')).toBe(before)
+    expect(await backups()).toEqual([])
   })
 })

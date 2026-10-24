@@ -44,8 +44,8 @@ describe('intervalHint', () => {
 describe('followLabel', () => {
   const home = '/Users/t'
   const logs = (label: string): { standardOutPath: string; standardErrorPath: string } => ({
-    standardOutPath: `/Users/t/Library/Logs/${label}/stdout.log`,
-    standardErrorPath: `/Users/t/Library/Logs/${label}/stderr.log`
+    standardOutPath: `/Users/t/Library/Logs/${label}/output.log`,
+    standardErrorPath: `/Users/t/Library/Logs/${label}/output.log`
   })
   const at = (label: string, extra = {}): ReturnType<typeof emptyAgentForm> => ({
     ...emptyAgentForm(),

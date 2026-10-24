@@ -1,9 +1,10 @@
 /**
- * Prefilled starting points for a new agent. A template only sets the trigger
- * (when the agent runs); Label, the command and log paths are filled in by the
- * create flow (#25 suggests defaults).
+ * Prefilled starting points for a new agent: the trigger (when it runs) on top
+ * of newAgentForm() (Script mode with a stub, PATH with Homebrew). The create
+ * flow adds the label and log paths, so a template is enough for a working agent.
  */
-import { emptyAgentForm, emptyCalendarEntry, type AgentForm } from './agent-form'
+import { newAgentForm } from './agent-defaults'
+import { emptyCalendarEntry, type AgentForm } from './agent-form'
 
 export type TemplateId = 'run-at-login' | 'interval' | 'schedule' | 'watch-path' | 'keep-alive'
 
@@ -20,7 +21,7 @@ export interface AgentTemplate {
 }
 
 function withForm(patch: (form: AgentForm) => void): AgentForm {
-  const form = emptyAgentForm()
+  const form = newAgentForm()
   patch(form)
   return form
 }
