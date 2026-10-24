@@ -25,6 +25,7 @@ const api: AgentDeskApi = {
     list: (options) => ipcRenderer.invoke(IpcChannel.AgentsList, options),
     read: (path) => ipcRenderer.invoke(IpcChannel.AgentsRead, path),
     control: (path, action) => ipcRenderer.invoke(IpcChannel.AgentsControl, path, action),
+    lint: (xml) => ipcRenderer.invoke(IpcChannel.AgentsLint, xml),
     onChanged: (callback) => {
       // Never hand the IpcRendererEvent to the renderer
       const listener = (): void => callback()

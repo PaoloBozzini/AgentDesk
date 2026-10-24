@@ -1,5 +1,6 @@
 import type { AgentDetail, AgentListResult } from './agent-types'
 import type { ActionResult, AgentAction } from './control-types'
+import type { LintResult } from './plist-types'
 import type { LogEvent, LogStream, LogWindow, TailStart, UnifiedLogStart } from './log-types'
 
 /**
@@ -14,6 +15,7 @@ export const IpcChannel = {
   AgentsList: 'agents:list',
   AgentsRead: 'agents:read',
   AgentsControl: 'agents:control',
+  AgentsLint: 'agents:lint',
   SubscriptionDispose: 'subscription:dispose',
   LogsTailFile: 'logs:tail-file',
   LogsShow: 'logs:show',
@@ -68,6 +70,8 @@ export interface AgentDeskApi {
     read(path: string): Promise<AgentDetail>
     /** launchctl action on a user agent. Never rejects for launchctl failures: see ActionResult. */
     control(path: string, action: AgentAction): Promise<ActionResult>
+    /** `plutil -lint` on plist text (nothing is saved). */
+    lint(xml: string): Promise<LintResult>
     /** Called when files in ~/Library/LaunchAgents change. Returns an unsubscribe function. */
     onChanged(callback: () => void): () => void
   }
