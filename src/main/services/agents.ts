@@ -1,8 +1,14 @@
-import { readdir } from 'fs/promises'
+import { createHash } from 'crypto'
+import { readdir, readFile } from 'fs/promises'
 import { homedir } from 'os'
 import { basename, dirname, isAbsolute, join, resolve } from 'path'
 import type { AgentDetail, AgentScope, AgentSummary } from '../../shared/agent-types'
-import { readPlistFile, type PlistDict } from './plist'
+import { parsePlistBuffer, readPlistFile, type PlistDict } from './plist'
+
+/** sha256 of the file bytes; lets a save detect that the file changed since it was opened. */
+export function contentHash(bytes: Uint8Array): string {
+  return createHash('sha256').update(bytes).digest('hex')
+}
 
 export interface AgentDir {
   dir: string
@@ -119,10 +125,12 @@ export function resolveAgentFile(path: unknown, dirs: AgentDir[]): AgentDir & { 
 export async function readAgent(path: unknown, dirs: AgentDir[]): Promise<AgentDetail> {
   const file = resolveAgentFile(path, dirs)
   const fileName = basename(file.path)
-  const parsed = await readPlistFile(file.path)
+  const bytes = await readFile(file.path)
+  const parsed = parsePlistBuffer(bytes)
   return {
     summary: { ...summarize(file.path, fileName, file.scope, parsed.data), format: parsed.format },
     data: parsed.data,
-    xml: parsed.xml
+    xml: parsed.xml,
+    hash: contentHash(bytes)
   }
 }

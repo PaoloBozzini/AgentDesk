@@ -52,8 +52,14 @@ export function parsePlistXml(xml: string): PlistDict {
   return asDict(value)
 }
 
+/**
+ * XML in Apple's layout (what plutil and Xcode write): tab indent, root
+ * <dict> at column 0. Keeps diffs against hand-made / Apple-written files small.
+ * Dedenting only touches tag lines: text content can't start with `<` (escaped).
+ */
 export function serializePlist(data: PlistDict): string {
-  return build(data as Parameters<typeof build>[0]) + '\n'
+  const xml = build(data as Parameters<typeof build>[0], { indent: '\t', newline: '\n' })
+  return xml.replace(/^\t(?=\t*<)/gm, '') + '\n'
 }
 
 export function parsePlistBuffer(buf: Uint8Array): ParsedPlist {

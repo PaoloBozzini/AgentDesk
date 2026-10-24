@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { AgentDetail, AgentSummary } from '../../../shared/agent-types'
 import { AgentActions } from './AgentActions'
+import { EditAgentDialog } from './EditAgentDialog'
 import { LogView } from './LogView'
 import { UnifiedLogView } from './UnifiedLogView'
 import { PlistTree } from './PlistTree'
@@ -38,6 +39,8 @@ export function AgentDetailPanel({
 }): React.JSX.Element {
   const [tab, setTab] = useState<Tab>('keys')
   const [load, setLoad] = useState<Load>({ status: 'loading', path })
+  // Pinned when the editor opens: later re-reads (watcher) must not change its baseline
+  const [editing, setEditing] = useState<AgentDetail | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -69,6 +72,15 @@ export function AgentDetailPanel({
             {path}
           </p>
         </div>
+        {current.status === 'ok' && !current.detail.summary.readOnly && (
+          <button
+            className="button"
+            onClick={() => setEditing(current.detail)}
+            title="Edit this agent"
+          >
+            Edit…
+          </button>
+        )}
         <button className="icon-button" onClick={onClose} aria-label="Close detail">
           ✕
         </button>
@@ -108,6 +120,14 @@ export function AgentDetailPanel({
           <LogView key={`${path}:${activeTab}`} agentPath={path} stream={activeTab} />
         )}
       </div>
+      {editing && editing.summary.path === path && (
+        <EditAgentDialog
+          detail={editing}
+          loaded={agent?.runtime?.loaded === true}
+          onSaved={onChanged}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </aside>
   )
 }

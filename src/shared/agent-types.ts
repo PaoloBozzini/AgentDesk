@@ -47,4 +47,6 @@ export interface AgentDetail {
   data: PlistDict
   /** Original XML, or normalized XML when the file is binary. */
   xml: string
+  /** sha256 of the file bytes, passed back on save to detect outside changes. */
+  hash: string
 }

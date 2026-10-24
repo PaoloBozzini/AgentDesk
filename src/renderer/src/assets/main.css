@@ -811,3 +811,26 @@
   color: var(--danger);
   background: var(--danger-bg);
 }
+
+.diff-view {
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  user-select: text;
+}
+
+.diff-heads {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.modal.modal-wide {
+  width: min(1000px, 100%);
+}

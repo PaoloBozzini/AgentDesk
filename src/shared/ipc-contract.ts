@@ -4,7 +4,9 @@ import type {
   CreateAgentOptions,
   CreateAgentResult,
   PlistConvertResult,
-  PlistInput
+  PlistInput,
+  SaveAgentOptions,
+  SaveAgentResult
 } from './edit-types'
 import type { LintResult } from './plist-types'
 import type { LogEvent, LogStream, LogWindow, TailStart, UnifiedLogStart } from './log-types'
@@ -23,6 +25,7 @@ export const IpcChannel = {
   AgentsControl: 'agents:control',
   AgentsLint: 'agents:lint',
   AgentsCreate: 'agents:create',
+  AgentsSave: 'agents:save',
   PlistConvert: 'plist:convert',
   SubscriptionDispose: 'subscription:dispose',
   LogsTailFile: 'logs:tail-file',
@@ -86,6 +89,8 @@ export interface AgentDeskApi {
     lint(xml: string): Promise<LintResult>
     /** Validate, lint and write ~/Library/LaunchAgents/<Label>.plist; never overwrites. */
     create(input: PlistInput, options: CreateAgentOptions): Promise<CreateAgentResult>
+    /** Conflict check, validate, lint, back up, then replace the user agent's file. */
+    save(path: string, input: PlistInput, options: SaveAgentOptions): Promise<SaveAgentResult>
     /** Called when files in ~/Library/LaunchAgents change. Returns an unsubscribe function. */
     onChanged(callback: () => void): () => void
   }

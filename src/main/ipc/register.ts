@@ -15,7 +15,9 @@ import {
 } from '../services/agents'
 import { convertPlistInput, createAgent } from '../services/create'
 import { controlAgent } from '../services/control'
+import { backupsDir } from '../services/backup'
 import { appSupportDir, writeRootsFor } from '../services/paths'
+import { saveAgent } from '../services/save'
 import { lintPlist } from '../services/plutil'
 import { registry, trackOwner } from '../services/registry'
 import { isLogStream, startFileTail } from '../services/logs/tailService'
@@ -137,4 +139,13 @@ export function registerIpcHandlers(): void {
   )
 
   handle(IpcChannel.PlistConvert, (_e, input) => convertPlistInput(input))
+
+  handle(IpcChannel.AgentsSave, (_e, path, input, options) =>
+    saveAgent(path, input, options, {
+      writableDirs: userWritable(),
+      roots: writeRootsFor(homedir()),
+      backupDir: backupsDir(homedir()),
+      lint
+    })
+  )
 }
