@@ -4,6 +4,7 @@ import { AgentTable } from './components/AgentTable'
 import { CreateAgentDialog } from './components/CreateAgentDialog'
 import type { AppInfo } from '../../shared/ipc-contract'
 import { useAgents } from './hooks/useAgents'
+import { isTypingTarget, stepSelection } from './lib/selection'
 import {
   EMPTY_FILTER,
   filterAgents,
@@ -22,6 +23,10 @@ function App(): React.JSX.Element {
   const [info, setInfo] = useState<AppInfo | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const visible = useMemo(() => filterAgents(agents, filter), [agents, filter])
+  const visiblePaths = useRef<string[]>([])
+  useEffect(() => {
+    visiblePaths.current = visible.map((a) => a.path)
+  }, [visible])
   const counts = useMemo(() => statusCounts(agents, filter.query), [agents, filter.query])
 
   useEffect(() => {
@@ -50,6 +55,15 @@ function App(): React.JSX.Element {
         } else {
           setSelectedPath(null)
         }
+      }
+      if (
+        (e.key === 'ArrowDown' || e.key === 'ArrowUp') &&
+        !isTypingTarget(document.activeElement)
+      ) {
+        e.preventDefault()
+        const paths = visiblePaths.current
+        setSelectedPath((cur) => stepSelection(paths, cur, e.key === 'ArrowDown' ? 1 : -1) ?? cur)
+        return
       }
       if (e.key === 'r' && e.metaKey) {
         e.preventDefault()
@@ -129,12 +143,24 @@ function App(): React.JSX.Element {
         <main className="content">
           {error ? (
             <p className="state error">{error}</p>
-          ) : !loading && agents.length === 0 ? (
-            <p className="state">No agents found</p>
+          ) : loading && agents.length === 0 ? (
+            <p className="state">Loading agents…</p>
+          ) : agents.length === 0 ? (
+            <div className="state">
+              <p>No agents in ~/Library/LaunchAgents yet.</p>
+              <button className="button primary empty-action" onClick={() => setCreating(true)}>
+                New agent (⌘N)
+              </button>
+            </div>
           ) : !loading && visible.length === 0 ? (
             <p className="state">No agents match the current filters</p>
           ) : (
-            <AgentTable agents={visible} selectedPath={selectedPath} onSelect={setSelectedPath} />
+            <AgentTable
+              agents={visible}
+              selectedPath={selectedPath}
+              onSelect={setSelectedPath}
+              compact={selectedPath !== null}
+            />
           )}
         </main>
         {selectedPath && (

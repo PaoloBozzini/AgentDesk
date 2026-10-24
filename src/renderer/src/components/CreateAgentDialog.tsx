@@ -46,9 +46,11 @@ export function CreateAgentDialog({
   }, [busy, onClose])
 
   useEffect(() => {
-    dialogRef.current
-      ?.querySelector<HTMLElement>('.modal-body input, .modal-body button, .modal-footer button')
-      ?.focus()
+    const root = dialogRef.current
+    const first =
+      root?.querySelector<HTMLElement>('.modal-body input, .modal-body textarea') ??
+      root?.querySelector<HTMLElement>('.modal-body button, .modal-footer button')
+    first?.focus()
   }, [step.kind])
 
   const start = (template?: AgentTemplate): void => {
