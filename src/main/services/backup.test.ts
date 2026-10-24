@@ -1,9 +1,27 @@
-import { chmod, mkdir, mkdtemp, readdir, readFile, rm, stat, symlink, writeFile } from 'fs/promises'
+import {
+  chmod,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  realpath,
+  rm,
+  stat,
+  symlink,
+  writeFile
+} from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { backupAgentFile, BackupError, backupsDir, backupTimestamp, UNLABELED_DIR } from './backup'
-import { writeRootsFor } from './paths'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  backupAgentFile,
+  BackupError,
+  backupsDir,
+  backupTimestamp,
+  revealBackups,
+  UNLABELED_DIR
+} from './backup'
+import { PathRestrictionError, writeRootsFor } from './paths'
 import { MAX_PLIST_BYTES } from './plist'
 
 const NOW = new Date('2026-10-24T14:05:09.123Z')
@@ -111,5 +129,30 @@ describe('backupAgentFile', () => {
   it('leaves no partial file on failure', async () => {
     await expect(backupAgentFile(base, 'com.t.x', opts())).rejects.toThrow()
     expect(await readdir(join(dir, 'com.t.x')).catch(() => [])).toEqual([])
+  })
+})
+
+describe('revealBackups', () => {
+  it('creates the folder if missing and opens it', async () => {
+    const opened: string[] = []
+    await revealBackups(dir, roots, async (p) => {
+      opened.push(p)
+      return ''
+    })
+    expect((await stat(dir)).isDirectory()).toBe(true)
+    expect((await stat(dir)).mode & 0o777).toBe(0o700)
+    expect(opened).toEqual([await realpath(dir)])
+  })
+
+  it('reports an open failure', async () => {
+    await expect(revealBackups(dir, roots, async () => 'no app')).rejects.toThrow('no app')
+  })
+
+  it('refuses a folder outside the write roots', async () => {
+    const open = vi.fn(async () => '')
+    await expect(revealBackups(join(base, 'elsewhere'), roots, open)).rejects.toThrow(
+      PathRestrictionError
+    )
+    expect(open).not.toHaveBeenCalled()
   })
 })

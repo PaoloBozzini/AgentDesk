@@ -390,6 +390,10 @@
   border: none;
   background: none;
   padding: 2px 4px;
+  color: var(--accent);
+}
+
+.error-panel .link-button {
   color: var(--danger);
   text-decoration: underline;
 }
@@ -776,12 +780,6 @@
 
 .agent-form .link-button {
   align-self: flex-start;
-}
-
-.agent-form .link-button,
-.modal-footer .link-button {
-  color: var(--accent);
-  text-decoration: none;
 }
 
 /* XML editor */

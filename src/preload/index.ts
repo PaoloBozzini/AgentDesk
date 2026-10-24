@@ -22,7 +22,8 @@ const api: AgentDeskApi = {
   },
   app: {
     getInfo: () => ipcRenderer.invoke(IpcChannel.AppGetInfo),
-    copyText: (text) => ipcRenderer.invoke(IpcChannel.AppCopyText, text)
+    copyText: (text) => ipcRenderer.invoke(IpcChannel.AppCopyText, text),
+    revealBackups: () => ipcRenderer.invoke(IpcChannel.AppRevealBackups)
   },
   agents: {
     list: (options) => ipcRenderer.invoke(IpcChannel.AgentsList, options),

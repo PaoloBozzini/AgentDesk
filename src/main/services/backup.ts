@@ -71,3 +71,18 @@ export async function backupAgentFile(
     throw new BackupError(`Backup of ${sourcePath} failed: ${(e as Error).message}`, { cause: e })
   }
 }
+
+/**
+ * Creates the backups folder if missing (inside the write roots) and opens it
+ * with `open` (Electron `shell.openPath`, which resolves to an error message or '').
+ */
+export async function revealBackups(
+  dir: string,
+  roots: string[],
+  open: (path: string) => Promise<string>
+): Promise<void> {
+  const real = await assertWritablePath(dir, roots)
+  await mkdir(real, { recursive: true, mode: 0o700 })
+  const error = await open(real)
+  if (error) throw new Error(`Couldn’t open the backups folder: ${error}`)
+}

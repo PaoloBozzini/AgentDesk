@@ -89,6 +89,13 @@ function App(): React.JSX.Element {
         >
           New agent
         </button>
+        <button
+          className="button"
+          onClick={() => void window.agentDesk.app.revealBackups().catch(() => {})}
+          title="Open the backups folder in Finder"
+        >
+          Backups
+        </button>
         <button className="button" onClick={reload} disabled={loading} title="Refresh (⌘R)">
           Refresh
         </button>
