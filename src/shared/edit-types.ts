@@ -48,3 +48,17 @@ export type SaveAgentResult =
       /** The file changed on disk since it was opened. */
       conflict?: boolean
     }
+
+export type DeleteAgentResult =
+  | {
+      ok: true
+      backupPath: string
+      /** The agent was loaded and has been booted out. */
+      unloaded: boolean
+    }
+  | {
+      ok: false
+      error: string
+      /** Set when bootout failed (nothing was deleted). */
+      unloadError?: ActionError
+    }

@@ -1,4 +1,4 @@
-import { app, clipboard, ipcMain, type IpcMainInvokeEvent, type WebContents } from 'electron'
+import { app, clipboard, ipcMain, shell, type IpcMainInvokeEvent, type WebContents } from 'electron'
 import { homedir, userInfo } from 'os'
 import { join } from 'path'
 import { IpcChannel, IpcEvent, type AppInfo, type IpcChannelName } from '../../shared/ipc-contract'
@@ -14,6 +14,8 @@ import {
   type AgentDir
 } from '../services/agents'
 import { convertPlistInput, createAgent } from '../services/create'
+import { deleteAgent } from '../services/delete'
+import { parseDomainPrint } from '../services/launchctl/domainParser'
 import { controlAgent } from '../services/control'
 import { backupsDir } from '../services/backup'
 import { appSupportDir, writeRootsFor } from '../services/paths'
@@ -146,6 +148,18 @@ export function registerIpcHandlers(): void {
       roots: writeRootsFor(homedir()),
       backupDir: backupsDir(homedir()),
       lint
+    })
+  )
+
+  handle(IpcChannel.AgentsDelete, (_e, path) =>
+    deleteAgent(path, {
+      writableDirs: userWritable(),
+      roots: writeRootsFor(homedir()),
+      backupDir: backupsDir(homedir()),
+      isLoaded: async (label) =>
+        parseDomainPrint(await launchctl.run(launchctl.commands.printDomain())).services.has(label),
+      unload: (p) => controlAgent(p, 'unload', { launchctl, writableDirs: userWritable() }),
+      trash: (p) => shell.trashItem(p)
     })
   )
 }

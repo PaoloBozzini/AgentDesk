@@ -3,6 +3,7 @@ import type { ActionResult, AgentAction } from './control-types'
 import type {
   CreateAgentOptions,
   CreateAgentResult,
+  DeleteAgentResult,
   PlistConvertResult,
   PlistInput,
   SaveAgentOptions,
@@ -26,6 +27,7 @@ export const IpcChannel = {
   AgentsLint: 'agents:lint',
   AgentsCreate: 'agents:create',
   AgentsSave: 'agents:save',
+  AgentsDelete: 'agents:delete',
   PlistConvert: 'plist:convert',
   SubscriptionDispose: 'subscription:dispose',
   LogsTailFile: 'logs:tail-file',
@@ -91,6 +93,8 @@ export interface AgentDeskApi {
     create(input: PlistInput, options: CreateAgentOptions): Promise<CreateAgentResult>
     /** Conflict check, validate, lint, back up, then replace the user agent's file. */
     save(path: string, input: PlistInput, options: SaveAgentOptions): Promise<SaveAgentResult>
+    /** Bootout if loaded, back up, move the file to the Trash. User agents only. */
+    delete(path: string): Promise<DeleteAgentResult>
     /** Called when files in ~/Library/LaunchAgents change. Returns an unsubscribe function. */
     onChanged(callback: () => void): () => void
   }

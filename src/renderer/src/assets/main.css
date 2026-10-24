@@ -834,3 +834,43 @@
 .modal.modal-wide {
   width: min(1000px, 100%);
 }
+
+.modal.modal-narrow {
+  width: min(520px, 100%);
+}
+
+.confirm-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin-bottom: 12px;
+}
+
+.confirm-facts dt {
+  color: var(--text-muted);
+}
+
+.confirm-facts dd {
+  word-break: break-all;
+  user-select: text;
+}
+
+.confirm-steps {
+  padding-left: 18px;
+  color: var(--text-muted);
+}
+
+.confirm-steps li + li {
+  margin-top: 2px;
+}
+
+.button.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.button.danger:hover:not(:disabled) {
+  background: var(--danger);
+  filter: brightness(1.1);
+}
