@@ -98,3 +98,7 @@ npm run verify:package
 ```
 
 Produces `dist/agent-desk-<version>-{arm64,x64}.dmg` and `-mac.zip`, ad-hoc signed. Signing with a Developer ID and notarizing are optional: [docs/packaging.md](docs/packaging.md).
+
+## License
+
+[MIT](LICENSE) © 2026 Paolo Bozzini
