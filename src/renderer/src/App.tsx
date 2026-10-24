@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AgentDetailPanel } from './components/AgentDetailPanel'
 import { AgentTable } from './components/AgentTable'
+import { CreateAgentDialog } from './components/CreateAgentDialog'
+import type { AppInfo } from '../../shared/ipc-contract'
 import { useAgents } from './hooks/useAgents'
 import {
   EMPTY_FILTER,
@@ -16,12 +18,24 @@ function App(): React.JSX.Element {
   const { agents, loading, error, statusError, revision, reload } = useAgents(includeSystem)
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
   const [filter, setFilter] = useState<AgentFilter>(EMPTY_FILTER)
+  const [creating, setCreating] = useState(false)
+  const [info, setInfo] = useState<AppInfo | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const visible = useMemo(() => filterAgents(agents, filter), [agents, filter])
   const counts = useMemo(() => statusCounts(agents, filter.query), [agents, filter.query])
 
   useEffect(() => {
+    window.agentDesk.app.getInfo().then(setInfo, () => setInfo(null))
+  }, [])
+
+  useEffect(() => {
+    if (creating) return
     const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'n' && e.metaKey) {
+        e.preventDefault()
+        setCreating(true)
+        return
+      }
       if (e.key === 'f' && e.metaKey) {
         e.preventDefault()
         searchRef.current?.focus()
@@ -42,7 +56,7 @@ function App(): React.JSX.Element {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [reload])
+  }, [reload, creating])
 
   return (
     <div className="app">
@@ -65,6 +79,14 @@ function App(): React.JSX.Element {
           onChange={(e) => setFilter((f) => ({ ...f, query: e.target.value }))}
         />
         <span className="spacer" />
+        <button
+          className="button primary"
+          onClick={() => setCreating(true)}
+          disabled={!info}
+          title="New agent (⌘N)"
+        >
+          New agent
+        </button>
         <button className="button" onClick={reload} disabled={loading} title="Refresh (⌘R)">
           Refresh
         </button>
@@ -116,6 +138,17 @@ function App(): React.JSX.Element {
           />
         )}
       </div>
+      {creating && info && (
+        <CreateAgentDialog
+          info={info}
+          onCreated={(path) => {
+            setFilter(EMPTY_FILTER)
+            setSelectedPath(path)
+            reload()
+          }}
+          onClose={() => setCreating(false)}
+        />
+      )}
     </div>
   )
 }

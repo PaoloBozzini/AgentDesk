@@ -568,3 +568,218 @@
   border-color: var(--danger);
   color: var(--danger);
 }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 35%);
+  z-index: 10;
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: min(720px, 100%);
+  max-height: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 25%);
+}
+
+.modal-header,
+.modal-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+.modal-header {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border);
+}
+
+.modal-footer .spacer {
+  flex: 1;
+}
+
+.modal-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+
+.modal-problem {
+  padding: 8px 16px;
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.modal-problem pre {
+  margin-top: 4px;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.template-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.template-card:hover,
+.template-card:focus-visible {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+
+/* Agent form */
+.agent-form fieldset {
+  border: none;
+  padding: 0;
+  margin: 0 0 18px;
+}
+
+.agent-form legend {
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+
+.field > label,
+.field-label {
+  font-weight: 500;
+}
+
+.agent-form input,
+.agent-form textarea,
+.agent-form select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  user-select: text;
+}
+
+.agent-form input.mono,
+.agent-form textarea.mono {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.agent-form textarea {
+  resize: vertical;
+}
+
+.agent-form select {
+  align-self: flex-start;
+}
+
+.agent-form input:focus,
+.agent-form textarea:focus,
+.agent-form select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.has-error > input,
+.has-error > textarea,
+.agent-form input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.field-error {
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.field-hint {
+  font-size: 12px;
+}
+
+.calendar-row,
+.env-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.calendar-row .mini {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 72px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.calendar-row .mini input {
+  width: 100%;
+}
+
+.env-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.env-row {
+  align-items: center;
+}
+
+.keepalive-conditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+
+.agent-form .link-button {
+  align-self: flex-start;
+}
+
+.agent-form .link-button,
+.modal-footer .link-button {
+  color: var(--accent);
+  text-decoration: none;
+}

@@ -4,8 +4,16 @@ import { join } from 'path'
 import { IpcChannel, IpcEvent, type AppInfo, type IpcChannelName } from '../../shared/ipc-contract'
 import { isTrustedRendererUrl } from '../security/policy'
 import type { AgentListResult } from '../../shared/agent-types'
+import type { LintResult } from '../../shared/plist-types'
 import { isAgentAction } from '../../shared/control-types'
-import { agentDirsFor, listAgents, readAgent, userAgentsDir } from '../services/agents'
+import {
+  agentDirsFor,
+  listAgents,
+  readAgent,
+  userAgentsDir,
+  type AgentDir
+} from '../services/agents'
+import { createAgent } from '../services/create'
 import { controlAgent } from '../services/control'
 import { appSupportDir, writeRootsFor } from '../services/paths'
 import { lintPlist } from '../services/plutil'
@@ -102,17 +110,29 @@ export function registerIpcHandlers(): void {
     readAgent(path, agentDirsFor({ includeSystem: true }))
   )
 
+  const userWritable = (): AgentDir[] => [{ dir: userAgentsDir(), scope: 'user' }]
+
   handle(IpcChannel.AgentsControl, (_e, path, action) => {
     if (!isAgentAction(action)) throw new Error('Unknown action')
-    return controlAgent(path, action, {
-      launchctl,
-      writableDirs: [{ dir: userAgentsDir(), scope: 'user' }]
-    })
+    return controlAgent(path, action, { launchctl, writableDirs: userWritable() })
   })
+
+  const lint = (xml: string): Promise<LintResult> => {
+    const home = homedir()
+    return lintPlist(xml, { tempDir: join(appSupportDir(home), 'tmp'), roots: writeRootsFor(home) })
+  }
 
   handle(IpcChannel.AgentsLint, (_e, xml) => {
     if (typeof xml !== 'string') throw new Error('Invalid plist text')
-    const home = homedir()
-    return lintPlist(xml, { tempDir: join(appSupportDir(home), 'tmp'), roots: writeRootsFor(home) })
+    return lint(xml)
   })
+
+  handle(IpcChannel.AgentsCreate, (_e, input, options) =>
+    createAgent(input, options, {
+      agentsDir: userAgentsDir(),
+      roots: writeRootsFor(homedir()),
+      lint,
+      load: (path) => controlAgent(path, 'load', { launchctl, writableDirs: userWritable() })
+    })
+  )
 }
