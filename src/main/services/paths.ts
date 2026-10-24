@@ -22,12 +22,13 @@ export class PathRestrictionError extends Error {
   }
 }
 
+/** Agent Desk's own data folder (backups, temp files). */
+export function appSupportDir(home: string): string {
+  return join(home, 'Library', 'Application Support', 'Agent Desk')
+}
+
 export function writeRootsFor(home: string): string[] {
-  return [
-    join(home, 'Library', 'LaunchAgents'),
-    join(home, 'Library', 'Application Support', 'Agent Desk'),
-    join(home, 'Library', 'Logs')
-  ]
+  return [join(home, 'Library', 'LaunchAgents'), appSupportDir(home), join(home, 'Library', 'Logs')]
 }
 
 export function isInside(child: string, parent: string): boolean {

@@ -5,3 +5,9 @@ export type PlistValue =
 export type PlistDict = { [key: string]: PlistValue }
 
 export type PlistFormat = 'xml' | 'binary'
+
+/** `plutil -lint` outcome; `message` is plutil's text without the temp file path. */
+export interface LintResult {
+  ok: boolean
+  message: string
+}

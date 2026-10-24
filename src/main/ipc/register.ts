@@ -7,6 +7,8 @@ import type { AgentListResult } from '../../shared/agent-types'
 import { isAgentAction } from '../../shared/control-types'
 import { agentDirsFor, listAgents, readAgent, userAgentsDir } from '../services/agents'
 import { controlAgent } from '../services/control'
+import { appSupportDir, writeRootsFor } from '../services/paths'
+import { lintPlist } from '../services/plutil'
 import { registry, trackOwner } from '../services/registry'
 import { isLogStream, startFileTail } from '../services/logs/tailService'
 import { isLogWindow } from '../services/logs/unifiedLog'
@@ -106,5 +108,11 @@ export function registerIpcHandlers(): void {
       launchctl,
       writableDirs: [{ dir: userAgentsDir(), scope: 'user' }]
     })
+  })
+
+  handle(IpcChannel.AgentsLint, (_e, xml) => {
+    if (typeof xml !== 'string') throw new Error('Invalid plist text')
+    const home = homedir()
+    return lintPlist(xml, { tempDir: join(appSupportDir(home), 'tmp'), roots: writeRootsFor(home) })
   })
 }
