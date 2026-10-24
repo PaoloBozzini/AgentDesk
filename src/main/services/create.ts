@@ -5,9 +5,11 @@ import { plistToForm, validateAgentForm } from '../../shared/agent-form'
 import type { ActionResult } from '../../shared/control-types'
 import type { CreateAgentResult, PlistConvertResult } from '../../shared/edit-types'
 import { isValidLabel } from '../../shared/label'
+import type { ScriptShell } from '../../shared/agent-form'
 import type { LintResult, RealHint } from '../../shared/plist-types'
 import { findRealHints } from './plistXml'
 import { ensureLogDirs } from './logDirs'
+import { scriptOf } from './scriptCheck'
 import { assertWritablePath } from './paths'
 import {
   MAX_PLIST_BYTES,
@@ -22,6 +24,8 @@ export interface CreateDeps {
   agentsDir: string
   roots: string[]
   lint: (xml: string) => Promise<LintResult>
+  /** `<shell> -n -c <script>` for Script-mode agents; resolves an error message or undefined. */
+  checkScript: (shell: ScriptShell, script: string) => Promise<string | undefined>
   /** Bootstrap the written file. */
   load: (path: string) => Promise<ActionResult>
 }
@@ -132,6 +136,12 @@ export async function createAgent(
   try {
     const { data, xml } = readPlistInput(input)
     const label = checkAgentData(data)
+
+    const inline = scriptOf(data)
+    if (inline) {
+      const syntax = await deps.checkScript(inline.shell, inline.script)
+      if (syntax) failWith('The script has a syntax error', { fieldErrors: { script: syntax } })
+    }
 
     const lint = await deps.lint(xml)
     if (!lint.ok) failWith('plutil -lint rejected the plist', { lint: lint.message })

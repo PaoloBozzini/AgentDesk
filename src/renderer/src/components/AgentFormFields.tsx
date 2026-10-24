@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import {
   CALENDAR_FIELDS,
   emptyCalendarEntry,
@@ -6,9 +6,13 @@ import {
   type CalendarField,
   type FormErrors,
   type KeepAliveForm,
-  type TriState
+  type ScriptShell,
+  type TriState,
+  SCRIPT_SHELLS,
+  switchCommandMode
 } from '../../../shared/agent-form'
-import { intervalHint, linesToList, listToLines } from '../lib/formEdit'
+import { errorsLogNextTo, intervalHint, linesToList, listToLines } from '../lib/formEdit'
+import { CodeEditor } from './CodeEditor'
 
 const CALENDAR_LABELS: Record<CalendarField, string> = {
   minute: 'Minute',
@@ -89,13 +93,17 @@ export function AgentFormFields({
   form,
   errors,
   onChange,
-  labelReadOnly = false
+  labelReadOnly = false,
+  moreOptionsOpen = true
 }: {
   form: AgentForm
   errors: FormErrors
   onChange: (form: AgentForm) => void
   labelReadOnly?: boolean
+  /** Start with "More options" expanded (it also opens itself on errors inside). */
+  moreOptionsOpen?: boolean
 }): React.JSX.Element {
+  const [moreOpen, setMoreOpen] = useState(moreOptionsOpen)
   const set = <K extends keyof AgentForm>(key: K, value: AgentForm[K]): void =>
     onChange({ ...form, [key]: value })
   const setKeepAlive = (patch: Partial<KeepAliveForm>): void =>
@@ -104,6 +112,10 @@ export function AgentFormFields({
     (k) => !(form.unsupported as string[]).includes(k)
   )
   const otherKeepAlive = Object.keys(form.keepAlive.other)
+  const oneLog = form.standardOutPath !== '' && form.standardOutPath === form.standardErrorPath
+  const moreErrors = Object.keys(errors).some((k) =>
+    /^(workingDirectory|environmentVariables|standardOutPath|standardErrorPath)/.test(k)
+  )
 
   return (
     <div className="agent-form">
@@ -129,39 +141,95 @@ export function AgentFormFields({
             />
           )}
         </Field>
-        <Field
-          label="Program"
-          error={errors.program}
-          hint="Absolute path. Optional when the first argument is the executable."
-        >
-          {(id) => (
-            <input
-              id={id}
-              className="mono"
-              value={form.program}
-              spellCheck={false}
-              placeholder="/usr/local/bin/my-script"
-              onChange={(e) => set('program', e.target.value)}
+      </fieldset>
+
+      <fieldset>
+        <legend>Command</legend>
+        <div className="segmented command-modes" role="tablist" aria-label="Command type">
+          {(['script', 'program'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              role="tab"
+              aria-selected={form.commandMode === mode}
+              className={form.commandMode === mode ? 'chip active' : 'chip'}
+              onClick={() => onChange(switchCommandMode(form, mode))}
+            >
+              {mode === 'script' ? 'Script' : 'Program'}
+            </button>
+          ))}
+        </div>
+        {form.commandMode === 'script' ? (
+          <div className={errors.script ? 'field has-error' : 'field'}>
+            <div className="script-head">
+              <span className="field-label">Script</span>
+              <select
+                aria-label="Shell"
+                value={form.scriptShell}
+                onChange={(e) => set('scriptShell', e.target.value as ScriptShell)}
+              >
+                {SCRIPT_SHELLS.map((sh) => (
+                  <option key={sh} value={sh}>
+                    {sh.replace('/bin/', '')}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <CodeEditor
+              language="shell"
+              className="script-editor"
+              ariaLabel="Script"
+              value={form.script}
+              invalid={!!errors.script}
+              onChange={(script) => set('script', script)}
             />
-          )}
-        </Field>
-        <Field
-          label="Arguments (one per line)"
-          error={listErrors(errors, 'programArguments')}
-          hint="ProgramArguments. The first line is argv[0]."
-        >
-          {(id) => (
-            <textarea
-              id={id}
-              className="mono"
-              rows={3}
-              value={listToLines(form.programArguments)}
-              spellCheck={false}
-              placeholder={'/bin/sh\n-c\necho hello'}
-              onChange={(e) => set('programArguments', linesToList(e.target.value))}
-            />
-          )}
-        </Field>
+            {errors.script ? (
+              <pre className="field-error mono" role="alert">
+                {errors.script}
+              </pre>
+            ) : (
+              <p className="field-hint muted">
+                Runs without your shell profile: PATH is set under More options.
+              </p>
+            )}
+          </div>
+        ) : (
+          <>
+            <Field
+              label="Program"
+              error={errors.program}
+              hint="Absolute path. Optional when the first argument is the executable."
+            >
+              {(id) => (
+                <input
+                  id={id}
+                  className="mono"
+                  value={form.program}
+                  spellCheck={false}
+                  placeholder="/usr/local/bin/my-script"
+                  onChange={(e) => set('program', e.target.value)}
+                />
+              )}
+            </Field>
+            <Field
+              label="Arguments (one per line)"
+              error={listErrors(errors, 'programArguments')}
+              hint="ProgramArguments. The first line is argv[0]."
+            >
+              {(id) => (
+                <textarea
+                  id={id}
+                  className="mono"
+                  rows={3}
+                  value={listToLines(form.programArguments)}
+                  spellCheck={false}
+                  placeholder={'/bin/sh\n-c\necho hello'}
+                  onChange={(e) => set('programArguments', linesToList(e.target.value))}
+                />
+              )}
+            </Field>
+          </>
+        )}
       </fieldset>
 
       <fieldset>
@@ -298,109 +366,141 @@ export function AgentFormFields({
         )}
       </fieldset>
 
-      <fieldset>
-        <legend>Environment</legend>
-        <Field label="Working directory" error={errors.workingDirectory}>
-          {(id) => (
-            <input
-              id={id}
-              className="mono"
-              value={form.workingDirectory}
-              spellCheck={false}
-              onChange={(e) => set('workingDirectory', e.target.value)}
-            />
-          )}
-        </Field>
-        <div className="field">
-          <span className="field-label">Environment variables</span>
-          {form.environmentVariables.map((v, i) => {
-            const update = (patch: Partial<typeof v>): void =>
-              set(
-                'environmentVariables',
-                form.environmentVariables.map((x, j) => (j === i ? { ...x, ...patch } : x))
-              )
-            const error =
-              errors[`environmentVariables.${i}.key`] ?? errors[`environmentVariables.${i}.value`]
-            return (
-              <div key={i}>
-                <div className="env-row">
-                  <input
-                    className="mono"
-                    aria-label={`Variable ${i + 1} name`}
-                    aria-invalid={!!error}
-                    placeholder="NAME"
-                    value={v.key}
-                    spellCheck={false}
-                    onChange={(e) => update({ key: e.target.value })}
-                  />
-                  <span className="muted">=</span>
-                  <input
-                    className="mono"
-                    aria-label={`Variable ${i + 1} value`}
-                    placeholder="value"
-                    value={v.value}
-                    spellCheck={false}
-                    onChange={(e) => update({ value: e.target.value })}
-                  />
-                  <button
-                    type="button"
-                    className="icon-button"
-                    aria-label={`Remove variable ${i + 1}`}
-                    onClick={() =>
-                      set(
-                        'environmentVariables',
-                        form.environmentVariables.filter((_, j) => j !== i)
-                      )
-                    }
-                  >
-                    ✕
-                  </button>
+      <details
+        className="more-options"
+        open={moreOpen || moreErrors}
+        onToggle={(e) => setMoreOpen((e.target as HTMLDetailsElement).open)}
+      >
+        <summary>More options</summary>
+        <fieldset>
+          <legend>Environment</legend>
+          <Field label="Working directory" error={errors.workingDirectory}>
+            {(id) => (
+              <input
+                id={id}
+                className="mono"
+                value={form.workingDirectory}
+                spellCheck={false}
+                onChange={(e) => set('workingDirectory', e.target.value)}
+              />
+            )}
+          </Field>
+          <div className="field">
+            <span className="field-label">Environment variables</span>
+            {form.environmentVariables.map((v, i) => {
+              const update = (patch: Partial<typeof v>): void =>
+                set(
+                  'environmentVariables',
+                  form.environmentVariables.map((x, j) => (j === i ? { ...x, ...patch } : x))
+                )
+              const error =
+                errors[`environmentVariables.${i}.key`] ?? errors[`environmentVariables.${i}.value`]
+              return (
+                <div key={i}>
+                  <div className="env-row">
+                    <input
+                      className="mono"
+                      aria-label={`Variable ${i + 1} name`}
+                      aria-invalid={!!error}
+                      placeholder="NAME"
+                      value={v.key}
+                      spellCheck={false}
+                      onChange={(e) => update({ key: e.target.value })}
+                    />
+                    <span className="muted">=</span>
+                    <input
+                      className="mono"
+                      aria-label={`Variable ${i + 1} value`}
+                      placeholder="value"
+                      value={v.value}
+                      spellCheck={false}
+                      onChange={(e) => update({ value: e.target.value })}
+                    />
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label={`Remove variable ${i + 1}`}
+                      onClick={() =>
+                        set(
+                          'environmentVariables',
+                          form.environmentVariables.filter((_, j) => j !== i)
+                        )
+                      }
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  {error && <p className="field-error">{error}</p>}
                 </div>
-                {error && <p className="field-error">{error}</p>}
-              </div>
-            )
-          })}
-          <button
-            type="button"
-            className="link-button"
-            onClick={() =>
-              set('environmentVariables', [...form.environmentVariables, { key: '', value: '' }])
-            }
-          >
-            + Add variable
-          </button>
-        </div>
-      </fieldset>
+              )
+            })}
+            <button
+              type="button"
+              className="link-button"
+              onClick={() =>
+                set('environmentVariables', [...form.environmentVariables, { key: '', value: '' }])
+              }
+            >
+              + Add variable
+            </button>
+          </div>
+        </fieldset>
 
-      <fieldset>
-        <legend>Logs</legend>
-        <Field label="Standard output" error={errors.standardOutPath}>
-          {(id) => (
+        <fieldset>
+          <legend>Logs</legend>
+          <Field
+            label={oneLog ? 'Log file' : 'Standard output'}
+            error={errors.standardOutPath}
+            hint={oneLog ? 'Output and errors go to this file.' : undefined}
+          >
+            {(id) => (
+              <input
+                id={id}
+                className="mono"
+                value={form.standardOutPath}
+                spellCheck={false}
+                onChange={(e) =>
+                  onChange({
+                    ...form,
+                    standardOutPath: e.target.value,
+                    standardErrorPath: oneLog ? e.target.value : form.standardErrorPath
+                  })
+                }
+              />
+            )}
+          </Field>
+          <label className="toggle">
             <input
-              id={id}
-              className="mono"
-              value={form.standardOutPath}
-              spellCheck={false}
-              onChange={(e) => set('standardOutPath', e.target.value)}
+              type="checkbox"
+              checked={!oneLog}
+              disabled={form.standardOutPath === ''}
+              onChange={(e) =>
+                set(
+                  'standardErrorPath',
+                  e.target.checked ? errorsLogNextTo(form.standardOutPath) : form.standardOutPath
+                )
+              }
             />
+            Separate file for errors (stderr)
+          </label>
+          {!oneLog && (
+            <Field label="Standard error" error={errors.standardErrorPath}>
+              {(id) => (
+                <input
+                  id={id}
+                  className="mono"
+                  value={form.standardErrorPath}
+                  spellCheck={false}
+                  onChange={(e) => set('standardErrorPath', e.target.value)}
+                />
+              )}
+            </Field>
           )}
-        </Field>
-        <Field
-          label="Standard error"
-          error={errors.standardErrorPath}
-          hint="Missing folders under ~/Library/Logs are created on save."
-        >
-          {(id) => (
-            <input
-              id={id}
-              className="mono"
-              value={form.standardErrorPath}
-              spellCheck={false}
-              onChange={(e) => set('standardErrorPath', e.target.value)}
-            />
-          )}
-        </Field>
-      </fieldset>
+          <p className="field-hint muted">
+            Missing folders under ~/Library/Logs are created on save.
+          </p>
+        </fieldset>
+      </details>
 
       {otherKeys.length > 0 && (
         <p className="muted field-hint">

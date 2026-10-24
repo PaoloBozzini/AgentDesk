@@ -4,6 +4,7 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { build } from 'plist'
 import { describe, expect, it } from 'vitest'
+import { SCRIPT_PATH, SCRIPT_STUB } from './agent-defaults'
 import { formToPlist, plistToForm } from './agent-form'
 import { AGENT_TEMPLATES, getTemplate, type TemplateId } from './agent-templates'
 
@@ -11,8 +12,8 @@ const ctx = { home: '/Users/tester' }
 
 function plistFor(id: TemplateId): Record<string, unknown> {
   const form = getTemplate(id).build(ctx)
+  // a template plus a label is a complete agent
   form.label = 'com.tester.example'
-  form.programArguments = ['/bin/echo', 'hi']
   const result = formToPlist(form)
   if (!result.ok) throw new Error(`invalid: ${JSON.stringify(result.errors)}`)
   return result.data
@@ -32,7 +33,8 @@ describe('agent templates', () => {
   it.each(AGENT_TEMPLATES.map((t) => t.id))('%s produces a valid plist that round-trips', (id) => {
     const data = plistFor(id)
     expect(data.Label).toBe('com.tester.example')
-    expect(data.ProgramArguments).toEqual(['/bin/echo', 'hi'])
+    expect(data.ProgramArguments).toEqual(['/bin/zsh', '-c', SCRIPT_STUB])
+    expect(data.EnvironmentVariables).toEqual({ PATH: SCRIPT_PATH })
     expect(build(data as Parameters<typeof build>[0])).toContain('<plist')
     const again = formToPlist(plistToForm(data as never))
     expect(again).toEqual({ ok: true, data })
@@ -70,7 +72,7 @@ describe('agent templates', () => {
     ]
     for (const { id } of AGENT_TEMPLATES) {
       const extraKeys = Object.keys(plistFor(id)).filter(
-        (k) => !['Label', 'ProgramArguments', ...triggers].includes(k)
+        (k) => !['Label', 'ProgramArguments', 'EnvironmentVariables', ...triggers].includes(k)
       )
       expect(extraKeys, id).toEqual([])
     }

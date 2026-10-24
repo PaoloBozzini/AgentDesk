@@ -2,11 +2,13 @@ import { randomUUID } from 'crypto'
 import { chmod, lstat, readFile, rename, rm, writeFile } from 'fs/promises'
 import { basename, dirname, join } from 'path'
 import type { SaveAgentResult } from '../../shared/edit-types'
+import type { ScriptShell } from '../../shared/agent-form'
 import type { LintResult } from '../../shared/plist-types'
 import { contentHash, readAgent, type AgentDir } from './agents'
 import { backupAgentFile, BackupError } from './backup'
 import { checkAgentData, EditFailure, failWith, readPlistInput } from './create'
 import { ensureLogDirs } from './logDirs'
+import { scriptOf } from './scriptCheck'
 import { assertWritablePath } from './paths'
 
 export interface SaveDeps {
@@ -16,6 +18,8 @@ export interface SaveDeps {
   /** `backupsDir(home)` */
   backupDir: string
   lint: (xml: string) => Promise<LintResult>
+  /** `<shell> -n -c <script>` for Script-mode agents; resolves an error message or undefined. */
+  checkScript: (shell: ScriptShell, script: string) => Promise<string | undefined>
 }
 
 /**
@@ -58,6 +62,12 @@ export async function saveAgent(
       failWith('Changing the Label is not supported: launchd and the file name use it', {
         fieldErrors: { label: `Keep the Label as ${current.summary.label ?? '(none)'}` }
       })
+    }
+
+    const inline = scriptOf(data)
+    if (inline) {
+      const syntax = await deps.checkScript(inline.shell, inline.script)
+      if (syntax) failWith('The script has a syntax error', { fieldErrors: { script: syntax } })
     }
 
     const lint = await deps.lint(xml)

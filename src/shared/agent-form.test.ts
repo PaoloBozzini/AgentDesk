@@ -4,6 +4,7 @@ import { parse } from 'plist'
 import { describe, expect, it } from 'vitest'
 import {
   emptyAgentForm,
+  switchCommandMode,
   emptyCalendarEntry,
   formToPlist,
   plistToForm,
@@ -35,7 +36,10 @@ describe('plistToForm', () => {
     const f = plistToForm(fixture)
     expect(f.label).toBe('com.agentdesk.test.full')
     expect(f.program).toBe('')
-    expect(f.programArguments).toEqual(['/bin/sh', '-c', 'echo "hi & bye" > /dev/null'])
+    expect(f.commandMode).toBe('script')
+    expect(f.scriptShell).toBe('/bin/sh')
+    expect(f.script).toBe('echo "hi & bye" > /dev/null')
+    expect(f.programArguments).toEqual([])
     expect(f.runAtLoad).toBe('true')
     expect(f.keepAlive).toEqual({
       mode: 'conditional',
@@ -333,6 +337,110 @@ describe('validateAgentForm', () => {
       'environmentVariables.2.key': 'Use letters, digits and _; do not start with a digit',
       'environmentVariables.3.key': 'Duplicate variable OK_1',
       'environmentVariables.4.value': 'Contains a NUL character'
+    })
+  })
+})
+
+describe('script mode', () => {
+  const scriptAgent = (args: string[], extra: PlistDict = {}): PlistDict => ({
+    Label: 'com.t.s',
+    ProgramArguments: args,
+    ...extra
+  })
+
+  it.each(['/bin/zsh', '/bin/bash', '/bin/sh'])(
+    'opens [%s, -c, script] in Script mode',
+    (shell) => {
+      const f = plistToForm(scriptAgent([shell, '-c', 'echo hi\ndate']))
+      expect(f).toMatchObject({
+        commandMode: 'script',
+        scriptShell: shell,
+        script: 'echo hi\ndate'
+      })
+    }
+  )
+
+  it.each<[string, PlistDict]>([
+    ['other shell', scriptAgent(['/opt/homebrew/bin/fish', '-c', 'echo'])],
+    ['relative shell', scriptAgent(['zsh', '-c', 'echo'])],
+    ['no -c', scriptAgent(['/bin/zsh', '/path/to/script.sh'])],
+    ['extra arguments', scriptAgent(['/bin/zsh', '-c', 'echo $0', 'name'])],
+    ['empty script', scriptAgent(['/bin/zsh', '-c', '  '])],
+    ['with Program', scriptAgent(['/bin/zsh', '-c', 'echo'], { Program: '/bin/zsh' })]
+  ])('keeps Program mode for %s', (_name, data) => {
+    expect(plistToForm(data).commandMode).toBe('program')
+  })
+
+  it.each<[string, PlistDict]>([
+    ['script', scriptAgent(['/bin/bash', '-c', 'set -e\ncd /tmp && ls'], { RunAtLoad: true })],
+    ['program-like', scriptAgent(['/bin/zsh', '-c', 'echo', 'x'])],
+    ['empty script', scriptAgent(['/bin/zsh', '-c', ''])]
+  ])('round-trips %s unchanged', (_name, data) => {
+    const result = formToPlist(plistToForm(data))
+    if (_name === 'empty script') {
+      // stays in Program mode; an empty -c argument is still a valid ProgramArguments
+      expect(result).toEqual({ ok: true, data })
+      return
+    }
+    expect(result).toEqual({ ok: true, data })
+  })
+
+  it('writes [shell, -c, script] and drops Program', () => {
+    const result = formToPlist(
+      form({ commandMode: 'script', scriptShell: '/bin/bash', script: 'echo hi', program: '/x' })
+    )
+    expect(result.ok && result.data).toMatchObject({
+      ProgramArguments: ['/bin/bash', '-c', 'echo hi']
+    })
+    expect(result.ok && 'Program' in result.data).toBe(false)
+  })
+
+  it('validates the script', () => {
+    expect(errorsOf({ commandMode: 'script', script: '  ' }).script).toBe(
+      'Write the commands to run'
+    )
+    expect(errorsOf({ commandMode: 'script', script: 'a\0b' }).script).toMatch(/NUL/)
+    expect(errorsOf({ commandMode: 'script', script: 'echo hi', program: '' })).toEqual({})
+  })
+
+  describe('switchCommandMode', () => {
+    it('program → script builds a quoted command line', () => {
+      const f = form({ program: '', programArguments: ['/usr/bin/say', 'hello world', "it's"] })
+      expect(switchCommandMode(f, 'script')).toMatchObject({
+        commandMode: 'script',
+        script: "/usr/bin/say 'hello world' 'it'\\''s'",
+        program: '',
+        programArguments: []
+      })
+    })
+
+    it('uses Program as the executable and skips argv[0]', () => {
+      const f = form({ program: '/bin/echo', programArguments: ['echo', 'a b'] })
+      expect(switchCommandMode(f, 'script').script).toBe("/bin/echo 'a b'")
+    })
+
+    it('unwraps an existing [shell, -c, script]', () => {
+      const f = form({ program: '', programArguments: ['/bin/bash', '-c', 'ls -l'] })
+      expect(switchCommandMode(f, 'script')).toMatchObject({
+        scriptShell: '/bin/bash',
+        script: 'ls -l'
+      })
+    })
+
+    it('script → program keeps the command as [shell, -c, script]', () => {
+      const f = form({ commandMode: 'script', scriptShell: '/bin/sh', script: 'date', program: '' })
+      expect(switchCommandMode(f, 'program')).toMatchObject({
+        commandMode: 'program',
+        programArguments: ['/bin/sh', '-c', 'date'],
+        script: ''
+      })
+    })
+
+    it('round-trips through both modes to the same plist', () => {
+      const data = scriptAgent(['/bin/zsh', '-c', 'echo "x"'])
+      const f = plistToForm(data)
+      const back = switchCommandMode(switchCommandMode(f, 'program'), 'script')
+      expect(formToPlist(back)).toEqual({ ok: true, data })
     })
   })
 })

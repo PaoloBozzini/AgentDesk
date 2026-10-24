@@ -53,8 +53,19 @@ export interface EnvVarForm {
   value: string
 }
 
+/** Shells Script mode runs with; the plist stores `[shell, -c, script]`. */
+export const SCRIPT_SHELLS = ['/bin/zsh', '/bin/bash', '/bin/sh'] as const
+export type ScriptShell = (typeof SCRIPT_SHELLS)[number]
+
+export const isScriptShell = (v: unknown): v is ScriptShell =>
+  (SCRIPT_SHELLS as readonly unknown[]).includes(v)
+
 export interface AgentForm {
   label: string
+  /** `script`: commands typed in the app; `program`: Program / ProgramArguments as-is. */
+  commandMode: 'script' | 'program'
+  scriptShell: ScriptShell
+  script: string
   program: string
   programArguments: string[]
   runAtLoad: TriState
@@ -77,7 +88,7 @@ export interface AgentForm {
 }
 
 /**
- * Field path → message. Paths: `label`, `program`, `programArguments`,
+ * Field path → message. Paths: `label`, `script`, `program`, `programArguments`,
  * `programArguments.<i>`, `keepAlive`, `startInterval`,
  * `startCalendarInterval.<i>.<field>`, `watchPaths.<i>`, `workingDirectory`,
  * `environmentVariables.<i>.key`, `environmentVariables.<i>.value`,
@@ -114,6 +125,9 @@ export function emptyCalendarEntry(): CalendarEntryForm {
 export function emptyAgentForm(): AgentForm {
   return {
     label: '',
+    commandMode: 'program',
+    scriptShell: '/bin/zsh',
+    script: '',
     program: '',
     programArguments: [],
     runAtLoad: 'unset',
@@ -260,7 +274,75 @@ export function plistToForm(data: PlistDict): AgentForm {
     }
     form.extra[key] = value
   }
+  detectScript(form)
   return form
+}
+
+/** `ProgramArguments = [<shell>, -c, <script>]` without Program opens in Script mode. */
+function detectScript(form: AgentForm): void {
+  const [shell, flag, script, ...rest] = form.programArguments
+  if (
+    form.program === '' &&
+    !('Program' in form.extra) &&
+    rest.length === 0 &&
+    isScriptShell(shell) &&
+    flag === '-c' &&
+    typeof script === 'string' &&
+    script.trim() !== ''
+  ) {
+    form.commandMode = 'script'
+    form.scriptShell = shell
+    form.script = script
+    form.programArguments = []
+  }
+}
+
+/** Shell word for a command line: plain if safe, else single-quoted. */
+function shellQuote(word: string): string {
+  if (/^[A-Za-z0-9_/.,:=@%+-]+$/.test(word)) return word
+  return `'${word.replace(/'/g, `'\\''`)}'`
+}
+
+/**
+ * Switch the Command section between Script and Program without losing the
+ * command: a program becomes the equivalent command line, a script becomes
+ * `[shell, -c, script]`.
+ */
+export function switchCommandMode(form: AgentForm, mode: AgentForm['commandMode']): AgentForm {
+  if (form.commandMode === mode) return form
+  if (mode === 'program') {
+    return {
+      ...form,
+      commandMode: 'program',
+      program: '',
+      programArguments: form.script.trim() ? [form.scriptShell, '-c', form.script] : [],
+      script: ''
+    }
+  }
+  const [first, flag, inline, ...rest] = form.programArguments
+  if (!form.program && isScriptShell(first) && flag === '-c' && rest.length === 0) {
+    return {
+      ...form,
+      commandMode: 'script',
+      scriptShell: first,
+      script: inline ?? '',
+      programArguments: []
+    }
+  }
+  // launchd runs Program (or argv[0]) with ProgramArguments as argv
+  const words = form.program
+    ? [form.program, ...form.programArguments.slice(1)]
+    : form.programArguments
+  return {
+    ...form,
+    commandMode: 'script',
+    script: words
+      .filter((w, i) => w !== '' || i > 0)
+      .map(shellQuote)
+      .join(' '),
+    program: '',
+    programArguments: []
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -284,6 +366,22 @@ function parseIntField(s: string): number | undefined {
   return /^\d+$/.test(t) ? Number(t) : NaN
 }
 
+function validateProgram(
+  form: AgentForm,
+  set: (path: string, msg: string | undefined) => void,
+  inExtra: (key: ManagedKey) => boolean
+): void {
+  if (form.program !== '') set('program', pathError(form.program))
+  form.programArguments.forEach((arg, i) => set(`programArguments.${i}`, stringError(arg)))
+  const hasProgram = form.program !== '' || inExtra('Program')
+  const hasArgs = form.programArguments.length > 0 || inExtra('ProgramArguments')
+  if (!hasProgram && !hasArgs) {
+    set('program', 'Set Program or ProgramArguments')
+  } else if (!hasProgram && form.programArguments.length > 0 && form.programArguments[0] === '') {
+    set('programArguments.0', 'The first argument is the executable; it cannot be empty')
+  }
+}
+
 export function validateAgentForm(form: AgentForm): FormErrors {
   const errors: FormErrors = {}
   const set = (path: string, msg: string | undefined): void => {
@@ -301,15 +399,14 @@ export function validateAgentForm(form: AgentForm): FormErrors {
     )
   }
 
-  // Program / ProgramArguments
-  if (form.program !== '') set('program', pathError(form.program))
-  form.programArguments.forEach((arg, i) => set(`programArguments.${i}`, stringError(arg)))
-  const hasProgram = form.program !== '' || inExtra('Program')
-  const hasArgs = form.programArguments.length > 0 || inExtra('ProgramArguments')
-  if (!hasProgram && !hasArgs) {
-    set('program', 'Set Program or ProgramArguments')
-  } else if (!hasProgram && form.programArguments.length > 0 && form.programArguments[0] === '') {
-    set('programArguments.0', 'The first argument is the executable; it cannot be empty')
+  // Command
+  if (form.commandMode === 'script') {
+    if (form.script.trim() === '') set('script', 'Write the commands to run')
+    else set('script', stringError(form.script))
+    if (!isScriptShell(form.scriptShell)) set('script', 'Pick zsh, bash or sh')
+    if (inExtra('Program')) set('script', 'This plist also has a Program key: edit it in XML')
+  } else {
+    validateProgram(form, set, inExtra)
   }
 
   // KeepAlive
@@ -406,8 +503,13 @@ function managedValues(form: AgentForm): Record<ManagedKey, PlistValue | undefin
   const interval = parseIntField(form.startInterval)
   return {
     Label: orUndefined(form.label),
-    Program: orUndefined(form.program),
-    ProgramArguments: form.programArguments.length ? [...form.programArguments] : undefined,
+    Program: form.commandMode === 'script' ? undefined : orUndefined(form.program),
+    ProgramArguments:
+      form.commandMode === 'script'
+        ? [form.scriptShell, '-c', form.script]
+        : form.programArguments.length
+          ? [...form.programArguments]
+          : undefined,
     RunAtLoad: fromTriState(form.runAtLoad),
     KeepAlive: writeKeepAlive(form.keepAlive),
     StartInterval: interval,

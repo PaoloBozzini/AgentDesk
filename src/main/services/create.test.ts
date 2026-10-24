@@ -4,6 +4,7 @@ import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActionResult } from '../../shared/control-types'
 import { convertPlistInput, createAgent, type CreateDeps } from './create'
+import { checkScriptSyntax } from './scriptCheck'
 
 const hooks = vi.hoisted(() => ({ beforeLogDirs: undefined as undefined | (() => Promise<void>) }))
 vi.mock('./logDirs', async (importOriginal) => {
@@ -34,6 +35,7 @@ beforeEach(async () => {
     agentsDir,
     roots: writeRootsFor(home),
     lint: vi.fn(async () => ({ ok: true, message: 'OK' })),
+    checkScript: (shell, script) => checkScriptSyntax(shell, script),
     load: vi.fn(async (): Promise<ActionResult> => ({ ok: true }))
   }
 })
@@ -174,6 +176,28 @@ describe('createAgent', () => {
       ok: false,
       error: 'plutil -lint failed: timed out'
     })
+  })
+})
+
+describe('createAgent script check', () => {
+  it('creates a script agent that parses', async () => {
+    const data = { Label: 'com.t.new', ProgramArguments: ['/bin/zsh', '-c', 'echo hi\ndate'] }
+    expect(await createAgent({ data }, {}, deps)).toMatchObject({ ok: true })
+  })
+
+  it('refuses a script with a syntax error, before linting or writing', async () => {
+    const data = {
+      Label: 'com.t.new',
+      ProgramArguments: ['/bin/bash', '-c', 'if true; then\n  echo hi']
+    }
+    const result = await createAgent({ data }, {}, deps)
+    expect(result).toMatchObject({
+      ok: false,
+      error: 'The script has a syntax error',
+      fieldErrors: { script: expect.stringMatching(/^line \d+: /) }
+    })
+    expect(deps.lint).not.toHaveBeenCalled()
+    expect(await readdir(agentsDir).catch(() => [])).toEqual([])
   })
 })
 

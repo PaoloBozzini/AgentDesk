@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { suggestLabel, withDefaultLogPaths } from '../../../shared/agent-defaults'
+import { newAgentForm, suggestLabel, withDefaultLogPaths } from '../../../shared/agent-defaults'
 import { emptyAgentForm, type FormErrors } from '../../../shared/agent-form'
 import { AGENT_TEMPLATES, type AgentTemplate } from '../../../shared/agent-templates'
 import type { ActionError } from '../../../shared/control-types'
@@ -54,7 +54,7 @@ export function CreateAgentDialog({
   }, [step.kind])
 
   const start = (template?: AgentTemplate): void => {
-    const base = template ? template.build({ home: info.home }) : emptyAgentForm()
+    const base = template ? template.build({ home: info.home }) : newAgentForm()
     const label = suggestLabel(info.userName, 'my-agent')
     setDoc(formDoc(withDefaultLogPaths({ ...base, label }, info.home)))
     setErrors({})
@@ -131,7 +131,7 @@ export function CreateAgentDialog({
               ))}
               <button className="template-card" onClick={() => start()}>
                 <strong>Blank</strong>
-                <span className="muted">Only the label and log paths are filled in.</span>
+                <span className="muted">A starter script you can change; no schedule.</span>
               </button>
             </div>
           </div>
@@ -147,6 +147,7 @@ export function CreateAgentDialog({
                 onErrors={setErrors}
                 onFormChange={(prev, next) => followLabel(prev, next, info.home)}
                 disabled={busy}
+                moreOptionsOpen={false}
               />
             </div>
             {problem && (

@@ -62,3 +62,9 @@ export function followLabel(prev: AgentForm, next: AgentForm, home: string): Age
   }
   return out
 }
+
+/** Path for a separate stderr log next to the output log: `<dir>/errors.log`. */
+export function errorsLogNextTo(outputPath: string): string {
+  const slash = outputPath.lastIndexOf('/')
+  return `${slash >= 0 ? outputPath.slice(0, slash) : ''}/errors.log`
+}

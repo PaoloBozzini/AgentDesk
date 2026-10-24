@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { AgentForm, FormErrors } from '../../../shared/agent-form'
 import { switchToForm, switchToXml, type EditorDoc, type EditorMode } from '../lib/editorDoc'
 import { AgentFormFields } from './AgentFormFields'
-import { XmlEditor } from './XmlEditor'
+import { CodeEditor } from './CodeEditor'
 
 /** Form / XML editor for one agent plist; switching converts and keeps changes. */
 export function AgentEditor({
@@ -12,7 +12,8 @@ export function AgentEditor({
   onErrors,
   onFormChange,
   disabled = false,
-  labelReadOnly = false
+  labelReadOnly = false,
+  moreOptionsOpen = true
 }: {
   doc: EditorDoc
   errors: FormErrors
@@ -22,6 +23,7 @@ export function AgentEditor({
   onFormChange?: (prev: AgentForm, next: AgentForm) => AgentForm
   disabled?: boolean
   labelReadOnly?: boolean
+  moreOptionsOpen?: boolean
 }): React.JSX.Element {
   const [switching, setSwitching] = useState(false)
   const [switchError, setSwitchError] = useState<string | null>(null)
@@ -77,12 +79,13 @@ export function AgentEditor({
           form={doc.form}
           errors={errors}
           labelReadOnly={labelReadOnly}
+          moreOptionsOpen={moreOptionsOpen}
           onChange={(next) =>
             onChange({ ...doc, form: onFormChange ? onFormChange(doc.form, next) : next })
           }
         />
       ) : (
-        <XmlEditor
+        <CodeEditor
           value={doc.xml}
           readOnly={disabled}
           onChange={(xml) => {

@@ -3,7 +3,7 @@
  * ~/Library/Logs/<label>/. Pure; the log folder itself is created on save by
  * main (services/logDirs.ts).
  */
-import type { AgentForm } from './agent-form'
+import { emptyAgentForm, type AgentForm } from './agent-form'
 import { isValidLabel, MAX_LABEL_LENGTH } from './label'
 
 /**
@@ -31,9 +31,35 @@ export interface LogPaths {
   stderr: string
 }
 
+/**
+ * One log for both streams: many tools (brew, git, curl…) write normal progress
+ * to stderr, so split logs mostly hide output in the wrong place.
+ */
 export function defaultLogPaths(home: string, label: string): LogPaths {
-  const dir = `${home.replace(/\/+$/, '')}/Library/Logs/${label}`
-  return { stdout: `${dir}/stdout.log`, stderr: `${dir}/stderr.log` }
+  const file = `${home.replace(/\/+$/, '')}/Library/Logs/${label}/output.log`
+  return { stdout: file, stderr: file }
+}
+
+/**
+ * PATH for new script agents. launchd's default is /usr/bin:/bin:/usr/sbin:/sbin,
+ * which misses Homebrew (Apple silicon and Intel locations).
+ */
+export const SCRIPT_PATH = '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'
+
+export const SCRIPT_STUB = [
+  "# Commands to run. Output goes to the agent's log.",
+  'echo "Hello from $(whoami) at $(date)"',
+  ''
+].join('\n')
+
+/** Starting point for a new agent: Script mode with a stub, PATH that includes Homebrew. */
+export function newAgentForm(): AgentForm {
+  return {
+    ...emptyAgentForm(),
+    commandMode: 'script',
+    script: SCRIPT_STUB,
+    environmentVariables: [{ key: 'PATH', value: SCRIPT_PATH }]
+  }
 }
 
 /**
