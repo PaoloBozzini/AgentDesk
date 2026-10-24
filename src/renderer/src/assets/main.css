@@ -951,3 +951,25 @@ pre.field-error {
   gap: 6px;
   margin-bottom: 10px;
 }
+
+.choice-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.choice-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-form .notice {
+  margin: 4px 0 0;
+}

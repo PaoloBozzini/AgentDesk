@@ -66,6 +66,8 @@ export interface AgentForm {
   commandMode: 'script' | 'program'
   scriptShell: ScriptShell
   script: string
+  /** Set by a Program → Script switch in the editor (not stored in the plist). */
+  commandOrigin?: CommandOrigin
   program: string
   programArguments: string[]
   runAtLoad: TriState
@@ -303,16 +305,117 @@ function shellQuote(word: string): string {
   return `'${word.replace(/'/g, `'\\''`)}'`
 }
 
+/** What the command was before Script mode was turned on, to undo it exactly. */
+export interface CommandOrigin {
+  /** `command`: the old command line became the script; `file`: a script file's contents were copied in. */
+  kind: 'command' | 'file'
+  program: string
+  programArguments: string[]
+  /** The script as produced by the switch; undo only applies while it is unchanged. */
+  script: string
+  /** `file` only: the file the contents came from. */
+  file?: string
+}
+
+/** The command launchd runs: Program (or argv[0]) followed by the remaining arguments. */
+export function commandWords(form: AgentForm): string[] {
+  return form.program ? [form.program, ...form.programArguments.slice(1)] : form.programArguments
+}
+
+const SCRIPT_EXTENSIONS = /\.(sh|zsh|bash|command)$/
+
+/**
+ * A Program-mode command that just runs a script file: `/path/x.sh` or
+ * `<shell> /path/x.sh`, no further arguments (the script couldn't see them as
+ * $1… once inlined). The file is the candidate for "copy its contents".
+ */
+export function scriptFileOf(form: AgentForm): { file: string; shell?: ScriptShell } | undefined {
+  if (form.commandMode !== 'program') return undefined
+  const words = commandWords(form)
+  if (words.length === 1 && words[0].startsWith('/') && !isScriptShell(words[0])) {
+    return { file: words[0] }
+  }
+  if (words.length === 2 && isScriptShell(words[0]) && words[1].startsWith('/')) {
+    return { file: words[1], shell: words[0] }
+  }
+  return undefined
+}
+
+/** Whether a path looks like a script by name (main also accepts files with a `#!` line). */
+export const hasScriptExtension = (path: string): boolean => SCRIPT_EXTENSIONS.test(path)
+
+/**
+ * The shell a script's `#!` line asks for: `#!/bin/zsh`, `#!/usr/bin/env bash`…
+ * `interpreter` is set for other interpreters (python, ruby…), which Script mode can't run.
+ */
+export function shellFromShebang(text: string): { shell?: ScriptShell; interpreter?: string } {
+  const first = text.split('\n', 1)[0]
+  if (!first.startsWith('#!')) return {}
+  const parts = first.slice(2).trim().split(/\s+/)
+  const program = parts[0]?.endsWith('/env') ? parts[1] : parts[0]
+  if (!program) return {}
+  const name = program.split('/').pop()!
+  const shell = SCRIPT_SHELLS.find((s) => s.endsWith(`/${name}`))
+  return shell ? { shell } : { interpreter: program }
+}
+
+/** Script mode with a script file's contents (its `#!` line dropped: the shell is chosen separately). */
+export function importScriptFile(
+  form: AgentForm,
+  file: string,
+  text: string,
+  shell: ScriptShell
+): AgentForm {
+  const lines = text.split('\n')
+  const body = (lines[0].startsWith('#!') ? lines.slice(1) : lines).join('\n').replace(/^\n+/, '')
+  return {
+    ...form,
+    commandMode: 'script',
+    scriptShell: shell,
+    script: body,
+    program: '',
+    programArguments: [],
+    commandOrigin: {
+      kind: 'file',
+      file,
+      program: form.program,
+      programArguments: form.programArguments,
+      script: body
+    }
+  }
+}
+
+/** The form without the editor-only commandOrigin key (absent, not undefined: forms are compared key by key). */
+function withoutOrigin(form: AgentForm): AgentForm {
+  const copy = { ...form }
+  delete copy.commandOrigin
+  return copy
+}
+
+/** The switch hasn't been edited since: switching back restores the old command exactly. */
+export const isUntouchedOrigin = (form: AgentForm): boolean =>
+  !!form.commandOrigin && form.commandOrigin.script === form.script
+
 /**
  * Switch the Command section between Script and Program without losing the
  * command: a program becomes the equivalent command line, a script becomes
- * `[shell, -c, script]`.
+ * `[shell, -c, script]`. Switching back without edits restores the original.
  */
 export function switchCommandMode(form: AgentForm, mode: AgentForm['commandMode']): AgentForm {
   if (form.commandMode === mode) return form
   if (mode === 'program') {
+    if (form.commandOrigin && isUntouchedOrigin(form)) {
+      const { program, programArguments } = form.commandOrigin
+      return {
+        ...withoutOrigin(form),
+        commandMode: 'program',
+        program,
+        programArguments: [...programArguments],
+        script: ''
+      }
+    }
     return {
-      ...form,
+      ...withoutOrigin(form),
       commandMode: 'program',
       program: '',
       programArguments: form.script.trim() ? [form.scriptShell, '-c', form.script] : [],
@@ -326,22 +429,31 @@ export function switchCommandMode(form: AgentForm, mode: AgentForm['commandMode'
       commandMode: 'script',
       scriptShell: first,
       script: inline ?? '',
-      programArguments: []
+      programArguments: [],
+      commandOrigin: {
+        kind: 'command',
+        program: form.program,
+        programArguments: form.programArguments,
+        script: inline ?? ''
+      }
     }
   }
-  // launchd runs Program (or argv[0]) with ProgramArguments as argv
-  const words = form.program
-    ? [form.program, ...form.programArguments.slice(1)]
-    : form.programArguments
+  const script = commandWords(form)
+    .filter((w, i) => w !== '' || i > 0)
+    .map(shellQuote)
+    .join(' ')
   return {
     ...form,
     commandMode: 'script',
-    script: words
-      .filter((w, i) => w !== '' || i > 0)
-      .map(shellQuote)
-      .join(' '),
+    script,
     program: '',
-    programArguments: []
+    programArguments: [],
+    commandOrigin: {
+      kind: 'command',
+      program: form.program,
+      programArguments: form.programArguments,
+      script
+    }
   }
 }
 

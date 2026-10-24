@@ -7,7 +7,8 @@ import type {
   PlistConvertResult,
   PlistInput,
   SaveAgentOptions,
-  SaveAgentResult
+  SaveAgentResult,
+  ScriptFileResult
 } from './edit-types'
 import type { LintResult } from './plist-types'
 import type { LogEvent, LogStream, LogWindow, TailStart, UnifiedLogStart } from './log-types'
@@ -29,6 +30,7 @@ export const IpcChannel = {
   AgentsCreate: 'agents:create',
   AgentsSave: 'agents:save',
   AgentsDelete: 'agents:delete',
+  AgentsReadScriptFile: 'agents:read-script-file',
   PlistConvert: 'plist:convert',
   SubscriptionDispose: 'subscription:dispose',
   LogsTailFile: 'logs:tail-file',
@@ -98,6 +100,8 @@ export interface AgentDeskApi {
     save(path: string, input: PlistInput, options: SaveAgentOptions): Promise<SaveAgentResult>
     /** Bootout if loaded, back up, move the file to the Trash. User agents only. */
     delete(path: string): Promise<DeleteAgentResult>
+    /** Contents of the script file a user agent runs (read-only; the file comes from the plist on disk). */
+    readScriptFile(path: string, file: string): Promise<ScriptFileResult>
     /** Called when files in ~/Library/LaunchAgents change. Returns an unsubscribe function. */
     onChanged(callback: () => void): () => void
   }

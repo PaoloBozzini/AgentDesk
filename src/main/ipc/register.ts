@@ -21,6 +21,7 @@ import { backupsDir, revealBackups } from '../services/backup'
 import { appSupportDir, writeRootsFor } from '../services/paths'
 import { saveAgent } from '../services/save'
 import { checkScriptSyntax } from '../services/scriptCheck'
+import { readAgentScriptFile } from '../services/scriptFile'
 import { lintPlist } from '../services/plutil'
 import { registry, trackOwner } from '../services/registry'
 import { isLogStream, startFileTail } from '../services/logs/tailService'
@@ -168,5 +169,9 @@ export function registerIpcHandlers(): void {
       unload: (p) => controlAgent(p, 'unload', { launchctl, writableDirs: userWritable() }),
       trash: (p) => shell.trashItem(p)
     })
+  )
+
+  handle(IpcChannel.AgentsReadScriptFile, (_e, path, file) =>
+    readAgentScriptFile(path, file, userWritable())
   )
 }

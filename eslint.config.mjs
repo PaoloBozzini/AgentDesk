@@ -12,14 +12,16 @@ const NO_SHELL = CHILD_PROCESS.map((name) => ({
   importNames: ['exec', 'execSync'],
   message: 'Use execFile/spawn with an argument array, never a shell string.'
 }))
+const PROCESS_CALLS = '/^(exec|execSync|execFile|execFileSync|spawn|spawnSync|fork)$/'
+const SHELL_OPTION =
+  "ObjectExpression > Property[key.name='shell'][value.type='Literal'][value.value!=false]"
 const NO_SHELL_SYNTAX = [
-  {
-    // options objects passed to execFile / spawn / fork / …
-    selector:
-      "CallExpression > ObjectExpression > Property[key.name='shell'][value.type='Literal'][value.value!=false]",
-    message: 'Never run processes through a shell (shell must be false or absent).'
-  }
-]
+  `CallExpression[callee.name=${PROCESS_CALLS}] > ${SHELL_OPTION}`,
+  `CallExpression[callee.property.name=${PROCESS_CALLS}] > ${SHELL_OPTION}`
+].map((selector) => ({
+  selector,
+  message: 'Never run processes through a shell (shell must be false or absent).'
+}))
 
 // Filesystem writes: only in the audited services below, all behind the path restriction.
 const FS_WRITES = [
