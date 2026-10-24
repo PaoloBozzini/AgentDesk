@@ -24,7 +24,8 @@
     "smoke": "electron-vite build && electron -r ./scripts/smoke.cjs .",
     "test:coverage": "vitest run --coverage",
     "test:integration": "AGENTDESK_INTEGRATION=1 vitest run src/main/services/__integration__",
-    "icon": "electron scripts/make-icon.cjs"
+    "icon": "electron scripts/make-icon.cjs",
+    "verify:package": "node scripts/verify-package.mjs"
   },
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",

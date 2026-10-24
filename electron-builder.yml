@@ -30,3 +30,15 @@ mac:
 dmg:
   artifactName: ${name}-${version}-${arch}.${ext}
 npmRebuild: false
+# Electron fuses (flipped in the binary at package time): no Node entry points
+# from the outside, and only the signed-off app.asar may run.
+electronFuses:
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableCookieEncryption: true
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  # Must stay on while the renderer is loaded from file:// (an app:// protocol would allow turning it off)
+  grantFileProtocolExtraPrivileges: true
+  resetAdHocDarwinSignature: true

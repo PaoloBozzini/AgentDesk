@@ -8,6 +8,7 @@ import { installQuitCleanup } from './services/registry'
 import { userAgentsDir } from './services/agents'
 import { FolderWatcher } from './services/watcher'
 import { IpcEvent } from '../shared/ipc-contract'
+import { runSelfTestIfRequested } from './selfTest'
 
 hardenApp()
 installQuitCleanup()
@@ -38,6 +39,8 @@ function createWindow(): void {
   }
   nativeTheme.on('updated', onTheme)
   mainWindow.on('closed', () => nativeTheme.off('updated', onTheme))
+
+  runSelfTestIfRequested(mainWindow)
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
