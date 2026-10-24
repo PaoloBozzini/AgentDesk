@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { AgentDetail, AgentSummary } from '../../../shared/agent-types'
 import { AgentActions } from './AgentActions'
+import { DeleteAgentDialog } from './DeleteAgentDialog'
 import { EditAgentDialog } from './EditAgentDialog'
 import { LogView } from './LogView'
 import { UnifiedLogView } from './UnifiedLogView'
@@ -41,6 +42,7 @@ export function AgentDetailPanel({
   const [load, setLoad] = useState<Load>({ status: 'loading', path })
   // Pinned when the editor opens: later re-reads (watcher) must not change its baseline
   const [editing, setEditing] = useState<AgentDetail | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -79,6 +81,11 @@ export function AgentDetailPanel({
             title="Edit this agent"
           >
             Edit…
+          </button>
+        )}
+        {agent && !agent.readOnly && (
+          <button className="button" onClick={() => setDeleting(true)} title="Move to Trash">
+            Delete…
           </button>
         )}
         <button className="icon-button" onClick={onClose} aria-label="Close detail">
@@ -126,6 +133,17 @@ export function AgentDetailPanel({
           loaded={agent?.runtime?.loaded === true}
           onSaved={onChanged}
           onClose={() => setEditing(null)}
+        />
+      )}
+      {deleting && agent && (
+        <DeleteAgentDialog
+          agent={agent}
+          onDeleted={() => {
+            setDeleting(false)
+            onChanged()
+            onClose()
+          }}
+          onClose={() => setDeleting(false)}
         />
       )}
     </aside>
