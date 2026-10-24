@@ -9,6 +9,8 @@ A macOS app for the jobs in `~/Library/LaunchAgents`: see what's loaded and runn
 - **Edit** in the form or the XML editor, review a diff, save. The old file is backed up first; if the agent is loaded you're offered a reload.
 - **Delete** safely: unloaded, backed up, moved to the Trash.
 
+Ready-made agents to start from (Homebrew update, backups, cleanup, disk alerts, folder watcher, local web server): [examples/](examples/README.md).
+
 Requires macOS 12 or later (Apple silicon or Intel).
 
 ## Install
