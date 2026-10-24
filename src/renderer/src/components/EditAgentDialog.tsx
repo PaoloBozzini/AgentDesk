@@ -196,7 +196,13 @@ export function EditAgentDialog({
           <div className="modal-body">
             <p>Saved.</p>
             <p className="muted field-hint">
-              Backup: <span className="mono">{step.backupPath}</span>
+              Backup: <span className="mono">{step.backupPath}</span>{' '}
+              <button
+                className="link-button"
+                onClick={() => void window.agentDesk.app.revealBackups().catch(() => {})}
+              >
+                Show in Finder
+              </button>
             </p>
             {loaded && reload === 'idle' && (
               <p className="notice">

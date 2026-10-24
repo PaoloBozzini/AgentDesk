@@ -21,6 +21,7 @@ import type { LogEvent, LogStream, LogWindow, TailStart, UnifiedLogStart } from 
 export const IpcChannel = {
   AppGetInfo: 'app:get-info',
   AppCopyText: 'app:copy-text',
+  AppRevealBackups: 'app:reveal-backups',
   AgentsList: 'agents:list',
   AgentsRead: 'agents:read',
   AgentsControl: 'agents:control',
@@ -81,6 +82,8 @@ export interface AgentDeskApi {
     getInfo(): Promise<AppInfo>
     /** Clipboard write via main (the renderer has no clipboard permission). */
     copyText(text: string): Promise<void>
+    /** Open ~/Library/Application Support/Agent Desk/backups in Finder (created if missing). */
+    revealBackups(): Promise<void>
   }
   agents: {
     list(options?: ListAgentsOptions): Promise<AgentListResult>

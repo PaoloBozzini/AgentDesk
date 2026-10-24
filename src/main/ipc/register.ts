@@ -17,7 +17,7 @@ import { convertPlistInput, createAgent } from '../services/create'
 import { deleteAgent } from '../services/delete'
 import { parseDomainPrint } from '../services/launchctl/domainParser'
 import { controlAgent } from '../services/control'
-import { backupsDir } from '../services/backup'
+import { backupsDir, revealBackups } from '../services/backup'
 import { appSupportDir, writeRootsFor } from '../services/paths'
 import { saveAgent } from '../services/save'
 import { lintPlist } from '../services/plutil'
@@ -63,6 +63,10 @@ export function registerIpcHandlers(): void {
     home: homedir(),
     userName: userInfo().username
   }))
+
+  handle(IpcChannel.AppRevealBackups, () =>
+    revealBackups(backupsDir(homedir()), writeRootsFor(homedir()), (p) => shell.openPath(p))
+  )
 
   handle(IpcChannel.AppCopyText, (_e, text) => {
     if (typeof text !== 'string' || text.length > 1_000_000) throw new Error('Invalid text')
