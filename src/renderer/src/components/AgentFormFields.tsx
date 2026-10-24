@@ -9,6 +9,9 @@ import {
   type ScriptShell,
   type TriState,
   SCRIPT_SHELLS,
+  importScriptFile,
+  isUntouchedOrigin,
+  scriptFileOf,
   switchCommandMode
 } from '../../../shared/agent-form'
 import { errorsLogNextTo, intervalHint, linesToList, listToLines } from '../lib/formEdit'
@@ -94,7 +97,8 @@ export function AgentFormFields({
   errors,
   onChange,
   labelReadOnly = false,
-  moreOptionsOpen = true
+  moreOptionsOpen = true,
+  agentPath
 }: {
   form: AgentForm
   errors: FormErrors
@@ -102,8 +106,38 @@ export function AgentFormFields({
   labelReadOnly?: boolean
   /** Start with "More options" expanded (it also opens itself on errors inside). */
   moreOptionsOpen?: boolean
+  /** Agent being edited: lets Script mode copy in the script file it runs. */
+  agentPath?: string
 }): React.JSX.Element {
   const [moreOpen, setMoreOpen] = useState(moreOptionsOpen)
+  const [scriptChoice, setScriptChoice] = useState<{
+    file: string
+    busy: boolean
+    error?: string
+  } | null>(null)
+
+  const chooseMode = (mode: AgentForm['commandMode']): void => {
+    if (mode === form.commandMode) return
+    const candidate = mode === 'script' && agentPath ? scriptFileOf(form) : undefined
+    if (candidate) {
+      setScriptChoice({ file: candidate.file, busy: false })
+      return
+    }
+    setScriptChoice(null)
+    onChange(switchCommandMode(form, mode))
+  }
+
+  const copyScriptFile = async (file: string): Promise<void> => {
+    setScriptChoice({ file, busy: true })
+    try {
+      const result = await window.agentDesk.agents.readScriptFile(agentPath!, file)
+      if (!result.ok) return setScriptChoice({ file, busy: false, error: result.error })
+      setScriptChoice(null)
+      onChange(importScriptFile(form, result.file, result.text, result.shell))
+    } catch (e) {
+      setScriptChoice({ file, busy: false, error: (e as Error).message })
+    }
+  }
   const set = <K extends keyof AgentForm>(key: K, value: AgentForm[K]): void =>
     onChange({ ...form, [key]: value })
   const setKeepAlive = (patch: Partial<KeepAliveForm>): void =>
@@ -153,12 +187,55 @@ export function AgentFormFields({
               role="tab"
               aria-selected={form.commandMode === mode}
               className={form.commandMode === mode ? 'chip active' : 'chip'}
-              onClick={() => onChange(switchCommandMode(form, mode))}
+              onClick={() => chooseMode(mode)}
             >
               {mode === 'script' ? 'Script' : 'Program'}
             </button>
           ))}
         </div>
+        {scriptChoice && (
+          <div className="choice-panel" role="group" aria-label="Switch to Script">
+            <p>
+              This agent runs the script file <span className="mono">{scriptChoice.file}</span>. How
+              should Script mode use it?
+            </p>
+            <div className="choice-buttons">
+              <button
+                type="button"
+                className="button primary"
+                disabled={scriptChoice.busy}
+                onClick={() => void copyScriptFile(scriptChoice.file)}
+              >
+                {scriptChoice.busy ? 'Reading…' : 'Copy its contents into the agent'}
+              </button>
+              <button
+                type="button"
+                className="button"
+                disabled={scriptChoice.busy}
+                onClick={() => {
+                  setScriptChoice(null)
+                  onChange(switchCommandMode(form, 'script'))
+                }}
+              >
+                Keep calling the file
+              </button>
+              <button
+                type="button"
+                className="link-button"
+                disabled={scriptChoice.busy}
+                onClick={() => setScriptChoice(null)}
+              >
+                Cancel
+              </button>
+            </div>
+            <p className="field-hint muted">Copying only reads the file; it stays where it is.</p>
+            {scriptChoice.error && (
+              <p className="field-error" role="alert">
+                {scriptChoice.error}
+              </p>
+            )}
+          </div>
+        )}
         {form.commandMode === 'script' ? (
           <div className={errors.script ? 'field has-error' : 'field'}>
             <div className="script-head">
@@ -187,6 +264,20 @@ export function AgentFormFields({
               <pre className="field-error mono" role="alert">
                 {errors.script}
               </pre>
+            ) : form.commandOrigin && isUntouchedOrigin(form) ? (
+              <p className="notice">
+                {form.commandOrigin.kind === 'file' ? (
+                  <>
+                    Copied from <span className="mono">{form.commandOrigin.file}</span>. Once you
+                    save, the agent runs this script and no longer uses that file.
+                  </>
+                ) : (
+                  <>
+                    This is the command the agent ran before. Replace it with your own commands, or
+                    switch back to Program to restore it exactly.
+                  </>
+                )}
+              </p>
             ) : (
               <p className="field-hint muted">
                 Runs without your shell profile: PATH is set under More options.

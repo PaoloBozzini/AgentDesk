@@ -164,6 +164,7 @@ export function EditAgentDialog({
               onErrors={setErrors}
               disabled={busy}
               labelReadOnly
+              agentPath={summary.path}
             />
           </div>
         )}

@@ -4,6 +4,10 @@ import { parse } from 'plist'
 import { describe, expect, it } from 'vitest'
 import {
   emptyAgentForm,
+  importScriptFile,
+  isUntouchedOrigin,
+  scriptFileOf,
+  shellFromShebang,
   switchCommandMode,
   emptyCalendarEntry,
   formToPlist,
@@ -442,5 +446,99 @@ describe('script mode', () => {
       const back = switchCommandMode(switchCommandMode(f, 'program'), 'script')
       expect(formToPlist(back)).toEqual({ ok: true, data })
     })
+  })
+})
+
+describe('script import and undo (#82)', () => {
+  const brew = (): AgentForm =>
+    plistToForm({ Label: 'com.t.brew', Program: '/Users/t/bin/brew_update.sh', RunAtLoad: true })
+
+  it('finds a script file run directly or through a shell', () => {
+    expect(scriptFileOf(brew())).toEqual({ file: '/Users/t/bin/brew_update.sh' })
+    const viaShell = plistToForm({ Label: 'a', ProgramArguments: ['/bin/bash', '/Users/t/x.sh'] })
+    const expected = { file: '/Users/t/x.sh', shell: '/bin/bash' }
+    expect(scriptFileOf(viaShell)).toEqual(expected)
+  })
+
+  it.each<[string, PlistDict]>([
+    ['extra arguments', { Label: 'a', ProgramArguments: ['/Users/t/x.sh', 'arg'] }],
+    ['relative', { Label: 'a', ProgramArguments: ['x.sh'] }],
+    ['a shell alone', { Label: 'a', ProgramArguments: ['/bin/zsh'] }],
+    ['already a script', { Label: 'a', ProgramArguments: ['/bin/zsh', '-c', 'echo'] }],
+    ['shell with a flag', { Label: 'a', ProgramArguments: ['/bin/zsh', '-l', '/x.sh'] }]
+  ])('no script file for %s', (_n, data) => {
+    expect(scriptFileOf(plistToForm(data))).toBeUndefined()
+  })
+
+  it.each([
+    ['#!/bin/zsh\necho', { shell: '/bin/zsh' }],
+    ['#!/bin/bash -e\necho', { shell: '/bin/bash' }],
+    ['#!/usr/bin/env zsh\n', { shell: '/bin/zsh' }],
+    ['#! /bin/sh\n', { shell: '/bin/sh' }],
+    ['#!/usr/bin/env python3\n', { interpreter: 'python3' }],
+    ['#!/opt/homebrew/bin/fish\n', { interpreter: '/opt/homebrew/bin/fish' }],
+    ['echo no shebang', {}]
+  ])('shebang %j', (text, expected) => {
+    expect(shellFromShebang(text)).toEqual(expected)
+  })
+
+  it('imports the file without its #! line and remembers where it came from', () => {
+    const f = importScriptFile(
+      brew(),
+      '/Users/t/bin/brew_update.sh',
+      '#!/bin/zsh\n\nbrew update\n',
+      '/bin/zsh'
+    )
+    expect(f).toMatchObject({
+      commandMode: 'script',
+      scriptShell: '/bin/zsh',
+      script: 'brew update\n'
+    })
+    expect(f.commandOrigin).toMatchObject({ kind: 'file', file: '/Users/t/bin/brew_update.sh' })
+    expect(formToPlist(f)).toMatchObject({
+      ok: true,
+      data: { ProgramArguments: ['/bin/zsh', '-c', 'brew update\n'] }
+    })
+  })
+
+  it.each(['command', 'file'] as const)(
+    'switching back untouched restores the plist exactly (%s)',
+    (kind) => {
+      const original = {
+        Label: 'com.t.brew',
+        Program: '/Users/t/bin/brew_update.sh',
+        RunAtLoad: true
+      }
+      const start = plistToForm(original)
+      const scripted =
+        kind === 'command'
+          ? switchCommandMode(start, 'script')
+          : importScriptFile(start, '/Users/t/bin/brew_update.sh', 'brew update\n', '/bin/zsh')
+      expect(isUntouchedOrigin(scripted)).toBe(true)
+      const back = switchCommandMode(scripted, 'program')
+      expect(back).toEqual(start)
+      expect('commandOrigin' in back).toBe(false)
+      expect(formToPlist(back)).toEqual({ ok: true, data: original })
+    }
+  )
+
+  it('after edits, switching back keeps the edited script as [shell, -c, script]', () => {
+    const scripted = switchCommandMode(brew(), 'script')
+    const edited = { ...scripted, script: 'brew outdated' }
+    expect(isUntouchedOrigin(edited)).toBe(false)
+    expect(switchCommandMode(edited, 'program').programArguments).toEqual([
+      '/bin/zsh',
+      '-c',
+      'brew outdated'
+    ])
+  })
+
+  it('a binary program becomes its command line, marked as a conversion', () => {
+    const f = switchCommandMode(
+      plistToForm({ Label: 'a', ProgramArguments: ['/usr/bin/say', 'hi there'] }),
+      'script'
+    )
+    expect(f.script).toBe("/usr/bin/say 'hi there'")
+    expect(f.commandOrigin?.kind).toBe('command')
   })
 })

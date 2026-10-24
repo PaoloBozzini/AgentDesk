@@ -1,4 +1,4 @@
-import type { FormErrors } from './agent-form'
+import type { FormErrors, ScriptShell } from './agent-form'
 import type { ActionError } from './control-types'
 import type { PlistDict, RealHint } from './plist-types'
 
@@ -62,3 +62,13 @@ export type DeleteAgentResult =
       /** Set when bootout failed (nothing was deleted). */
       unloadError?: ActionError
     }
+
+export type ScriptFileResult =
+  | {
+      ok: true
+      file: string
+      text: string
+      /** Shell to run it with: how the agent called it, else its `#!` line, else zsh. */
+      shell: ScriptShell
+    }
+  | { ok: false; error: string }

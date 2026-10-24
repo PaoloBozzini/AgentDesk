@@ -13,7 +13,8 @@ export function AgentEditor({
   onFormChange,
   disabled = false,
   labelReadOnly = false,
-  moreOptionsOpen = true
+  moreOptionsOpen = true,
+  agentPath
 }: {
   doc: EditorDoc
   errors: FormErrors
@@ -24,6 +25,7 @@ export function AgentEditor({
   disabled?: boolean
   labelReadOnly?: boolean
   moreOptionsOpen?: boolean
+  agentPath?: string
 }): React.JSX.Element {
   const [switching, setSwitching] = useState(false)
   const [switchError, setSwitchError] = useState<string | null>(null)
@@ -80,6 +82,7 @@ export function AgentEditor({
           errors={errors}
           labelReadOnly={labelReadOnly}
           moreOptionsOpen={moreOptionsOpen}
+          agentPath={agentPath}
           onChange={(next) =>
             onChange({ ...doc, form: onFormChange ? onFormChange(doc.form, next) : next })
           }
