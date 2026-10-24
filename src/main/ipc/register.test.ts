@@ -43,6 +43,8 @@ vi.mock('electron', () => {
     app: { getName: () => 'Agent Desk', getVersion: () => '0.0.0-test', isPackaged: false },
     clipboard: env.clipboard,
     shell: env.shell,
+    BrowserWindow: { fromWebContents: () => null },
+    dialog: { showOpenDialog: vi.fn(async () => ({ canceled: true, filePaths: [] })) },
     ipcMain: {
       handle: (channel: string, fn: (...args: unknown[]) => unknown) =>
         env.handlers.set(channel, fn)

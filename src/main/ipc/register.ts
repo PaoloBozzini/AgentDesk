@@ -1,7 +1,22 @@
-import { app, clipboard, ipcMain, shell, type IpcMainInvokeEvent, type WebContents } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  dialog,
+  ipcMain,
+  shell,
+  type IpcMainInvokeEvent,
+  type WebContents
+} from 'electron'
 import { homedir, userInfo } from 'os'
 import { join } from 'path'
-import { IpcChannel, IpcEvent, type AppInfo, type IpcChannelName } from '../../shared/ipc-contract'
+import {
+  IpcChannel,
+  IpcEvent,
+  isPathKind,
+  type AppInfo,
+  type IpcChannelName
+} from '../../shared/ipc-contract'
 import { isTrustedRendererUrl } from '../security/policy'
 import type { AgentListResult } from '../../shared/agent-types'
 import type { LintResult } from '../../shared/plist-types'
@@ -69,6 +84,27 @@ export function registerIpcHandlers(): void {
   handle(IpcChannel.AppRevealBackups, () =>
     revealBackups(backupsDir(homedir()), writeRootsFor(homedir()), (p) => shell.openPath(p))
   )
+
+  /** Native open dialog. Only returns the path the user picked; nothing is read. */
+  handle(IpcChannel.AppChoosePath, async (event, kind) => {
+    if (!isPathKind(kind)) throw new Error('Invalid path kind')
+    const properties: Electron.OpenDialogOptions['properties'] =
+      kind === 'program'
+        ? ['openFile', 'showHiddenFiles']
+        : kind === 'folder'
+          ? ['openDirectory', 'createDirectory']
+          : ['openFile', 'openDirectory']
+    const options: Electron.OpenDialogOptions = {
+      properties,
+      buttonLabel: 'Choose',
+      defaultPath: homedir()
+    }
+    const window = BrowserWindow.fromWebContents(event.sender)
+    const result = window
+      ? await dialog.showOpenDialog(window, options)
+      : await dialog.showOpenDialog(options)
+    return result.canceled ? null : (result.filePaths[0] ?? null)
+  })
 
   handle(IpcChannel.AppCopyText, (_e, text) => {
     if (typeof text !== 'string' || text.length > 1_000_000) throw new Error('Invalid text')
