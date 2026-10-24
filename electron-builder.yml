@@ -2,20 +2,31 @@ appId: com.paolobozzini.agentdesk
 productName: Agent Desk
 directories:
   buildResources: build
+  output: dist
 files:
-  - '!**/.vscode/*'
-  - '!src/*'
-  - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!vitest.config.{js,ts,mjs,cjs}'
-  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,CHANGELOG.md,README.md}'
-  - '!{.env,.env.*,.npmrc}'
-  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
-asarUnpack:
-  - resources/**
+  - out/**
+  - package.json
 mac:
+  icon: build/icon.icns
   category: public.app-category.developer-tools
+  minimumSystemVersion: '12.0'
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+  # Ad-hoc signature: runs on any Mac after "Open" in Finder / clearing quarantine.
+  # For a Developer ID build set CSC_NAME (or CSC_LINK + CSC_KEY_PASSWORD), see README.
+  identity: '-'
+  # The hardened runtime is for notarized Developer ID builds; with an ad-hoc
+  # signature it would need disable-library-validation. Turn on with a real identity.
+  hardenedRuntime: false
+  entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
+  # Notarization needs a Developer ID identity; enable with APPLE_* env vars, see README.
   notarize: false
+  # zip (and anything else without its own artifactName)
+  artifactName: ${name}-${version}-${arch}-mac.${ext}
 dmg:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: ${name}-${version}-${arch}.${ext}
 npmRebuild: false

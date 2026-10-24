@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b8cff"/>
+      <stop offset="1" stop-color="#1d4fd8"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#eef2fb"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <!-- macOS icon grid: 824 x 824 body centred on a 1024 canvas -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)" filter="url(#shadow)"/>
+  <rect x="222" y="262" width="580" height="500" rx="56" fill="url(#panel)" filter="url(#shadow)"/>
+  <!-- agent rows: status dot + label bar -->
+  <circle cx="312" cy="372" r="32" fill="#34c759"/>
+  <rect x="376" y="352" width="340" height="40" rx="20" fill="#c9d3ea"/>
+  <circle cx="312" cy="512" r="32" fill="#34c759"/>
+  <rect x="376" y="492" width="270" height="40" rx="20" fill="#c9d3ea"/>
+  <circle cx="312" cy="652" r="32" fill="#c3c7d1"/>
+  <rect x="376" y="632" width="310" height="40" rx="20" fill="#c9d3ea"/>
+</svg>
