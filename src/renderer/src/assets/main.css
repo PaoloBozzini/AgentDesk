@@ -783,3 +783,31 @@
   color: var(--accent);
   text-decoration: none;
 }
+
+/* XML editor */
+.xml-editor {
+  height: 100%;
+  min-height: 320px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  user-select: text;
+}
+
+.agent-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 100%;
+}
+
+.editor-modes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notice.error-notice {
+  color: var(--danger);
+  background: var(--danger-bg);
+}

@@ -3,7 +3,7 @@ import { link, lstat, mkdir, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { plistToForm, validateAgentForm } from '../../shared/agent-form'
 import type { ActionResult } from '../../shared/control-types'
-import type { CreateAgentResult } from '../../shared/edit-types'
+import type { CreateAgentResult, PlistConvertResult } from '../../shared/edit-types'
 import { isValidLabel } from '../../shared/label'
 import type { LintResult } from '../../shared/plist-types'
 import { ensureLogDirs } from './logDirs'
@@ -68,6 +68,15 @@ export function readPlistInput(input: unknown): { data: PlistDict; xml: string }
     return { data: input.data, xml }
   }
   return failWith('Invalid plist input')
+}
+
+/** Editor mode switch: form dict → XML text, or XML text → dict. Never throws. */
+export function convertPlistInput(input: unknown): PlistConvertResult {
+  try {
+    return { ok: true, ...readPlistInput(input) }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
 }
 
 /** Same rules as the form, re-checked in main: the renderer is not trusted. */

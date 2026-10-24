@@ -14,6 +14,9 @@ const api: AgentDeskApi = {
       }
     }
   },
+  plist: {
+    convert: (input) => ipcRenderer.invoke(IpcChannel.PlistConvert, input)
+  },
   subscriptions: {
     dispose: (id) => ipcRenderer.invoke(IpcChannel.SubscriptionDispose, id)
   },

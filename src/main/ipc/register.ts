@@ -13,7 +13,7 @@ import {
   userAgentsDir,
   type AgentDir
 } from '../services/agents'
-import { createAgent } from '../services/create'
+import { convertPlistInput, createAgent } from '../services/create'
 import { controlAgent } from '../services/control'
 import { appSupportDir, writeRootsFor } from '../services/paths'
 import { lintPlist } from '../services/plutil'
@@ -135,4 +135,6 @@ export function registerIpcHandlers(): void {
       load: (path) => controlAgent(path, 'load', { launchctl, writableDirs: userWritable() })
     })
   )
+
+  handle(IpcChannel.PlistConvert, (_e, input) => convertPlistInput(input))
 }

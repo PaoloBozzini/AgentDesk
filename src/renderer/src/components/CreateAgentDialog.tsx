@@ -1,16 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { suggestLabel, withDefaultLogPaths } from '../../../shared/agent-defaults'
-import {
-  emptyAgentForm,
-  formToPlist,
-  type AgentForm,
-  type FormErrors
-} from '../../../shared/agent-form'
+import { emptyAgentForm, type FormErrors } from '../../../shared/agent-form'
 import { AGENT_TEMPLATES, type AgentTemplate } from '../../../shared/agent-templates'
 import type { ActionError } from '../../../shared/control-types'
 import type { AppInfo } from '../../../shared/ipc-contract'
-import { followLabel, tidyForm } from '../lib/formEdit'
-import { AgentFormFields } from './AgentFormFields'
+import { docInput, formDoc, type EditorDoc } from '../lib/editorDoc'
+import { followLabel } from '../lib/formEdit'
+import { AgentEditor } from './AgentEditor'
 import { ErrorPanel } from './ErrorPanel'
 
 type Step =
@@ -31,7 +27,7 @@ export function CreateAgentDialog({
   onClose: () => void
 }): React.JSX.Element {
   const [step, setStep] = useState<Step>({ kind: 'pick' })
-  const [form, setForm] = useState<AgentForm>(emptyAgentForm)
+  const [doc, setDoc] = useState<EditorDoc>(() => formDoc(emptyAgentForm()))
   const [errors, setErrors] = useState<FormErrors>({})
   const [load, setLoad] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -58,31 +54,33 @@ export function CreateAgentDialog({
   const start = (template?: AgentTemplate): void => {
     const base = template ? template.build({ home: info.home }) : emptyAgentForm()
     const label = suggestLabel(info.userName, 'my-agent')
-    setForm(withDefaultLogPaths({ ...base, label }, info.home))
+    setDoc(formDoc(withDefaultLogPaths({ ...base, label }, info.home)))
     setErrors({})
     setProblem(null)
     setStep({ kind: 'edit', template })
   }
 
-  const change = (next: AgentForm): void => setForm((prev) => followLabel(prev, next, info.home))
-
   const create = async (): Promise<void> => {
-    const tidy = tidyForm(form)
-    setForm(tidy)
-    const result = formToPlist(tidy)
-    if (!result.ok) {
-      setErrors(result.errors)
-      setProblem({ message: 'Fix the highlighted fields' })
+    const prepared = docInput(doc)
+    if (!prepared.ok) {
+      setErrors(prepared.fieldErrors ?? {})
+      setProblem({ message: prepared.error })
       return
     }
     setErrors({})
     setProblem(null)
     setBusy(true)
     try {
-      const created = await window.agentDesk.agents.create({ data: result.data }, { load })
+      const created = await window.agentDesk.agents.create(prepared.input, { load })
       if (!created.ok) {
         setErrors(created.fieldErrors ?? {})
-        setProblem({ message: created.error, lint: created.lint })
+        const fieldText =
+          doc.mode === 'xml' && created.fieldErrors
+            ? Object.entries(created.fieldErrors)
+                .map(([field, msg]) => `${field}: ${msg}`)
+                .join('\n')
+            : undefined
+        setProblem({ message: created.error, lint: created.lint ?? fieldText })
         return
       }
       onCreated(created.path)
@@ -140,7 +138,14 @@ export function CreateAgentDialog({
         {step.kind === 'edit' && (
           <>
             <div className="modal-body">
-              <AgentFormFields form={form} errors={errors} onChange={change} />
+              <AgentEditor
+                doc={doc}
+                errors={errors}
+                onChange={setDoc}
+                onErrors={setErrors}
+                onFormChange={(prev, next) => followLabel(prev, next, info.home)}
+                disabled={busy}
+              />
             </div>
             {problem && (
               <div className="modal-problem" role="alert">
