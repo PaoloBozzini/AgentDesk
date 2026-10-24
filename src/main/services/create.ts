@@ -25,17 +25,18 @@ export interface CreateDeps {
   load: (path: string) => Promise<ActionResult>
 }
 
-class CreateFailure extends Error {
+/** Expected failure carrying the result to return; shared by create and save. */
+export class EditFailure extends Error {
   constructor(readonly result: Extract<CreateAgentResult, { ok: false }>) {
     super(result.error)
   }
 }
 
-const failWith = (
+export const failWith = (
   error: string,
   extra: Partial<Extract<CreateAgentResult, { ok: false }>> = {}
 ): never => {
-  throw new CreateFailure({ ok: false, error, ...extra })
+  throw new EditFailure({ ok: false, error, ...extra })
 }
 
 function isPlistValue(v: unknown, depth = 0): v is PlistValue {
@@ -142,7 +143,7 @@ export async function createAgent(
     const loaded = await deps.load(path)
     return loaded.ok ? { ok: true, path } : { ok: true, path, loadError: loaded.error }
   } catch (e) {
-    if (e instanceof CreateFailure) return e.result
+    if (e instanceof EditFailure) return e.result
     return { ok: false, error: (e as Error).message }
   }
 }

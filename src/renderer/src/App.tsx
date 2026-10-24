@@ -31,6 +31,8 @@ function App(): React.JSX.Element {
   useEffect(() => {
     if (creating) return
     const onKey = (e: KeyboardEvent): void => {
+      // Dialogs (create / edit) own the keyboard while open
+      if (document.querySelector('.modal')) return
       if (e.key === 'n' && e.metaKey) {
         e.preventDefault()
         setCreating(true)

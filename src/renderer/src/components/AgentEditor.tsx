@@ -11,7 +11,8 @@ export function AgentEditor({
   onChange,
   onErrors,
   onFormChange,
-  disabled = false
+  disabled = false,
+  labelReadOnly = false
 }: {
   doc: EditorDoc
   errors: FormErrors
@@ -20,6 +21,7 @@ export function AgentEditor({
   /** Optional hook for form edits (e.g. log paths following the label). */
   onFormChange?: (prev: AgentForm, next: AgentForm) => AgentForm
   disabled?: boolean
+  labelReadOnly?: boolean
 }): React.JSX.Element {
   const [switching, setSwitching] = useState(false)
   const [switchError, setSwitchError] = useState<string | null>(null)
@@ -74,6 +76,7 @@ export function AgentEditor({
         <AgentFormFields
           form={doc.form}
           errors={errors}
+          labelReadOnly={labelReadOnly}
           onChange={(next) =>
             onChange({ ...doc, form: onFormChange ? onFormChange(doc.form, next) : next })
           }

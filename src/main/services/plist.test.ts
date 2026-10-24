@@ -134,3 +134,57 @@ describe.runIf(isMac)('plutil cross-check', () => {
     expect(parsed.data).toEqual(parsePlistXml(fixtureXml))
   })
 })
+
+describe('serializePlist layout', () => {
+  it('uses tabs with the root dict at column 0', () => {
+    expect(serializePlist({ Label: 'a', Args: ['x'] })).toBe(
+      [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">',
+        '<plist version="1.0">',
+        '<dict>',
+        '\t<key>Label</key>',
+        '\t<string>a</string>',
+        '\t<key>Args</key>',
+        '\t<array>',
+        '\t\t<string>x</string>',
+        '\t</array>',
+        '</dict>',
+        '</plist>',
+        ''
+      ].join('\n')
+    )
+  })
+
+  it('keeps leading tabs inside multi-line strings', () => {
+    const data = { S: 'line1\n\tindented\n\t<not a tag>' }
+    expect(parsePlistXml(serializePlist(data))).toEqual(data)
+  })
+
+  it.runIf(process.platform === 'darwin')(
+    'matches plutil -convert xml1 for a typical agent',
+    async () => {
+      const { execFileSync } = await import('child_process')
+      const { mkdtempSync, readFileSync, rmSync, writeFileSync } = await import('fs')
+      const { tmpdir } = await import('os')
+      const { join } = await import('path')
+      const dir = mkdtempSync(join(tmpdir(), 'agentdesk-layout-'))
+      try {
+        // keys pre-sorted: plutil sorts them, only the layout is compared here
+        const data = {
+          EnvironmentVariables: { A: 'b' },
+          Label: 'com.t.a',
+          ProgramArguments: ['/bin/sh', '-c', 'echo "a & b"'],
+          RunAtLoad: true,
+          StartInterval: 60
+        }
+        const file = join(dir, 'a.plist')
+        writeFileSync(file, serializePlist(data))
+        execFileSync('/usr/bin/plutil', ['-convert', 'xml1', file])
+        expect(serializePlist(data)).toBe(readFileSync(file, 'utf8'))
+      } finally {
+        rmSync(dir, { recursive: true, force: true })
+      }
+    }
+  )
+})

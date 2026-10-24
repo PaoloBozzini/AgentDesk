@@ -1,11 +1,5 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { xml } from '@codemirror/lang-xml'
-import {
-  bracketMatching,
-  HighlightStyle,
-  indentOnInput,
-  syntaxHighlighting
-} from '@codemirror/language'
+import { bracketMatching, indentOnInput } from '@codemirror/language'
 import { EditorState } from '@codemirror/state'
 import {
   drawSelection,
@@ -15,48 +9,11 @@ import {
   keymap,
   lineNumbers
 } from '@codemirror/view'
-import { tags } from '@lezer/highlight'
 import { useEffect, useRef } from 'react'
-
-/** Colors are CSS variables (base.css), which inherit into the shadow root. */
-const highlight = HighlightStyle.define([
-  { tag: tags.tagName, color: 'var(--code-tag)' },
-  { tag: tags.attributeName, color: 'var(--code-attr)' },
-  { tag: tags.attributeValue, color: 'var(--code-string)' },
-  { tag: tags.comment, color: 'var(--text-muted)', fontStyle: 'italic' },
-  {
-    tag: [tags.angleBracket, tags.processingInstruction, tags.documentMeta],
-    color: 'var(--text-muted)'
-  },
-  { tag: tags.invalid, color: 'var(--danger)' }
-])
-
-const theme = EditorView.theme({
-  '&': {
-    height: '100%',
-    minHeight: '320px',
-    fontSize: '12px',
-    backgroundColor: 'var(--bg)',
-    color: 'var(--text)'
-  },
-  '.cm-scroller': { fontFamily: 'var(--mono)', lineHeight: '1.5' },
-  '.cm-gutters': {
-    backgroundColor: 'var(--bg-elevated)',
-    color: 'var(--text-muted)',
-    borderRight: '1px solid var(--border)'
-  },
-  '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'var(--bg-hover)' },
-  '&.cm-focused': { outline: 'none' },
-  '.cm-cursor': { borderLeftColor: 'var(--text)' },
-  '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': {
-    backgroundColor: 'var(--bg-selected) !important'
-  }
-})
+import { shadowContainer, xmlLook } from '../lib/codemirror'
 
 /**
- * Plist XML editor, mounted in a shadow root: CodeMirror then injects its
- * styles as constructable stylesheets, which the strict `style-src 'self'`
- * CSP allows (a <style> tag would be blocked).
+ * Plist XML editor, mounted in a shadow root (see shadowContainer).
  *
  * Uncontrolled inside (CodeMirror owns the text): `value` changes from outside
  * replace the document, edits are reported via onChange.
@@ -80,10 +37,7 @@ export function XmlEditor({
   }, [onChange])
 
   useEffect(() => {
-    const shadow = host.current!.shadowRoot ?? host.current!.attachShadow({ mode: 'open' })
-    const container = document.createElement('div')
-    container.style.height = '100%'
-    shadow.replaceChildren(container)
+    const { root: shadow, container } = shadowContainer(host.current!)
     const v = new EditorView({
       parent: container,
       root: shadow,
@@ -97,10 +51,7 @@ export function XmlEditor({
           history(),
           indentOnInput(),
           bracketMatching(),
-          xml(),
-          syntaxHighlighting(highlight),
-          theme,
-          EditorView.lineWrapping,
+          xmlLook(),
           EditorState.readOnly.of(readOnly),
           EditorView.contentAttributes.of({ 'aria-label': ariaLabel }),
           keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
