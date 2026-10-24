@@ -5,6 +5,7 @@
   "description": "Manage macOS user LaunchAgents",
   "main": "./out/main/index.js",
   "author": "Paolo Bozzini",
+  "license": "MIT",
   "homepage": "https://github.com/PaoloBozzini/AgentDesk",
   "scripts": {
     "format": "prettier --write .",
