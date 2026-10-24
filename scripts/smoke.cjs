@@ -24,10 +24,17 @@ app.on('browser-window-created', (_e, win) => {
     try {
       const result = await win.webContents.executeJavaScript(`(async () => ({
         isolated: typeof window.require === 'undefined' && typeof window.process === 'undefined',
+        inlineBlocked: await new Promise((resolve) => {
+          const s = document.createElement('script')
+          s.textContent = 'window.__smokeInline = 1'
+          document.head.appendChild(s)
+          setTimeout(() => resolve(window.__smokeInline !== 1), 100)
+        }),
         info: await window.agentDesk.app.getInfo(),
         agents: (await window.agentDesk.agents.list()).agents.length
       }))()`)
       if (!result.isolated) return fail('renderer can see Node globals')
+      if (!result.inlineBlocked) return fail('CSP did not block an inline script')
       if (!result.info || !result.info.version) return fail('app.getInfo() returned nothing')
       console.log(
         `[smoke] OK: ${result.info.name} ${result.info.version}, ${result.agents} agents listed`
