@@ -1,4 +1,5 @@
 import { app, clipboard, ipcMain, type IpcMainInvokeEvent, type WebContents } from 'electron'
+import { homedir, userInfo } from 'os'
 import { join } from 'path'
 import { IpcChannel, IpcEvent, type AppInfo, type IpcChannelName } from '../../shared/ipc-contract'
 import { isTrustedRendererUrl } from '../security/policy'
@@ -44,7 +45,9 @@ export function registerIpcHandlers(): void {
     name: app.getName(),
     version: app.getVersion(),
     platform: process.platform,
-    uid: process.getuid?.() ?? -1
+    uid: process.getuid?.() ?? -1,
+    home: homedir(),
+    userName: userInfo().username
   }))
 
   handle(IpcChannel.AppCopyText, (_e, text) => {

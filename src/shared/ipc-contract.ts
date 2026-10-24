@@ -38,6 +38,9 @@ export interface AppInfo {
   version: string
   platform: string
   uid: number
+  /** Home directory and short user name, for new-agent defaults. */
+  home: string
+  userName: string
 }
 
 export interface AgentDeskApi {
