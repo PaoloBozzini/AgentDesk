@@ -180,7 +180,7 @@ describe('createAgent', () => {
 describe('convertPlistInput', () => {
   it('serializes a dict and parses XML', () => {
     const toXml = convertPlistInput({ data: DATA })
-    expect(toXml).toEqual({ ok: true, data: DATA, xml: serializePlist(DATA) })
+    expect(toXml).toEqual({ ok: true, data: DATA, xml: serializePlist(DATA), realHints: [] })
     const back = convertPlistInput({ xml: toXml.ok ? toXml.xml : '' })
     expect(back).toMatchObject({ ok: true, data: DATA })
   })

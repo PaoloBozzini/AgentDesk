@@ -1,9 +1,9 @@
 import type { FormErrors } from './agent-form'
 import type { ActionError } from './control-types'
-import type { PlistDict } from './plist-types'
+import type { PlistDict, RealHint } from './plist-types'
 
 /** A new or edited plist: a dict from form mode, or text from XML mode (saved as typed). */
-export type PlistInput = { data: PlistDict } | { xml: string }
+export type PlistInput = { data: PlistDict; realHints?: RealHint[] } | { xml: string }
 
 export interface CreateAgentOptions {
   /** Bootstrap the agent right after writing it. */
@@ -27,7 +27,7 @@ export type CreateAgentResult =
     }
 
 export type PlistConvertResult =
-  { ok: true; data: PlistDict; xml: string } | { ok: false; error: string }
+  { ok: true; data: PlistDict; xml: string; realHints: RealHint[] } | { ok: false; error: string }
 
 export interface SaveAgentOptions {
   /** `AgentDetail.hash` from when the editor was opened. */

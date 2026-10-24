@@ -18,7 +18,13 @@ type Problem = { message: string; details?: string } | null
 function initialDoc(detail: AgentDetail): EditorDoc {
   const form = plistToForm(detail.data)
   // origin: switching to XML without edits shows the file's own text
-  return { mode: 'form', form, xml: detail.xml, origin: { xml: detail.xml, form } }
+  return {
+    mode: 'form',
+    form,
+    xml: detail.xml,
+    realHints: detail.realHints,
+    origin: { xml: detail.xml, form }
+  }
 }
 
 export function EditAgentDialog({

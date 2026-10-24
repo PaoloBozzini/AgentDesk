@@ -5,7 +5,8 @@ import { plistToForm, validateAgentForm } from '../../shared/agent-form'
 import type { ActionResult } from '../../shared/control-types'
 import type { CreateAgentResult, PlistConvertResult } from '../../shared/edit-types'
 import { isValidLabel } from '../../shared/label'
-import type { LintResult } from '../../shared/plist-types'
+import type { LintResult, RealHint } from '../../shared/plist-types'
+import { findRealHints } from './plistXml'
 import { ensureLogDirs } from './logDirs'
 import { assertWritablePath } from './paths'
 import {
@@ -54,19 +55,39 @@ function isPlainDict(v: unknown): v is PlistDict {
 }
 
 /** Renderer input → (dict, exact text to write). XML text is written as typed. */
-export function readPlistInput(input: unknown): { data: PlistDict; xml: string } {
+const MAX_HINTS = 10_000
+
+function readHints(v: unknown): RealHint[] {
+  if (!Array.isArray(v) || v.length > MAX_HINTS) return []
+  return v.filter(
+    (h): h is RealHint =>
+      isPlainDict(h) &&
+      typeof h.text === 'string' &&
+      h.text.length < 64 &&
+      Array.isArray(h.path) &&
+      h.path.length <= 64 &&
+      h.path.every((p) => typeof p === 'string' || (typeof p === 'number' && Number.isInteger(p)))
+  )
+}
+
+export function readPlistInput(input: unknown): {
+  data: PlistDict
+  xml: string
+  realHints: RealHint[]
+} {
   if (isPlainDict(input) && typeof input.xml === 'string') {
     if (Buffer.byteLength(input.xml) > MAX_PLIST_BYTES) failWith('Plist is too large')
     try {
-      return { data: parsePlistXml(input.xml), xml: input.xml }
+      return { data: parsePlistXml(input.xml), xml: input.xml, realHints: findRealHints(input.xml) }
     } catch (e) {
       return failWith((e as Error).message)
     }
   }
   if (isPlainDict(input) && isPlainDict(input.data) && isPlistValue(input.data)) {
-    const xml = serializePlist(input.data)
+    const realHints = readHints(input.realHints)
+    const xml = serializePlist(input.data, realHints)
     if (Buffer.byteLength(xml) > MAX_PLIST_BYTES) failWith('Plist is too large')
-    return { data: input.data, xml }
+    return { data: input.data, xml, realHints }
   }
   return failWith('Invalid plist input')
 }
