@@ -3,7 +3,7 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActionResult } from '../../shared/control-types'
-import { createAgent, type CreateDeps } from './create'
+import { convertPlistInput, createAgent, type CreateDeps } from './create'
 
 const hooks = vi.hoisted(() => ({ beforeLogDirs: undefined as undefined | (() => Promise<void>) }))
 vi.mock('./logDirs', async (importOriginal) => {
@@ -174,5 +174,19 @@ describe('createAgent', () => {
       ok: false,
       error: 'plutil -lint failed: timed out'
     })
+  })
+})
+
+describe('convertPlistInput', () => {
+  it('serializes a dict and parses XML', () => {
+    const toXml = convertPlistInput({ data: DATA })
+    expect(toXml).toEqual({ ok: true, data: DATA, xml: serializePlist(DATA) })
+    const back = convertPlistInput({ xml: toXml.ok ? toXml.xml : '' })
+    expect(back).toMatchObject({ ok: true, data: DATA })
+  })
+
+  it('returns errors instead of throwing', () => {
+    expect(convertPlistInput({ xml: '<plist><dict><key>a' })).toMatchObject({ ok: false })
+    expect(convertPlistInput(null)).toEqual({ ok: false, error: 'Invalid plist input' })
   })
 })

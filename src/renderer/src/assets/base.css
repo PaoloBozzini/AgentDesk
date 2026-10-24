@@ -14,6 +14,9 @@
   --danger-bg: #fde7e4;
   --mono: ui-monospace, 'SF Mono', Menlo, monospace;
   --radius: 6px;
+  --code-tag: #0b5cad;
+  --code-attr: #8a3ffc;
+  --code-string: #1a7f37;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -30,6 +33,9 @@
     --warn-bg: #3a2c12;
     --danger: #ff6b5e;
     --danger-bg: #3d1a17;
+    --code-tag: #6cb6ff;
+    --code-attr: #d2a8ff;
+    --code-string: #7ee787;
   }
 }
 

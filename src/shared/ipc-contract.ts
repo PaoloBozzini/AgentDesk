@@ -1,6 +1,11 @@
 import type { AgentDetail, AgentListResult } from './agent-types'
 import type { ActionResult, AgentAction } from './control-types'
-import type { CreateAgentOptions, CreateAgentResult, PlistInput } from './edit-types'
+import type {
+  CreateAgentOptions,
+  CreateAgentResult,
+  PlistConvertResult,
+  PlistInput
+} from './edit-types'
 import type { LintResult } from './plist-types'
 import type { LogEvent, LogStream, LogWindow, TailStart, UnifiedLogStart } from './log-types'
 
@@ -18,6 +23,7 @@ export const IpcChannel = {
   AgentsControl: 'agents:control',
   AgentsLint: 'agents:lint',
   AgentsCreate: 'agents:create',
+  PlistConvert: 'plist:convert',
   SubscriptionDispose: 'subscription:dispose',
   LogsTailFile: 'logs:tail-file',
   LogsShow: 'logs:show',
@@ -57,6 +63,10 @@ export interface AgentDeskApi {
     stream(agentPath: string): Promise<UnifiedLogStart>
     /** All log subscription events; filter by `id`. Returns an unsubscribe function. */
     onEvent(callback: (event: LogEvent) => void): () => void
+  }
+  plist: {
+    /** Parse XML text, or serialize a dict (same serializer as saves). Nothing is written. */
+    convert(input: PlistInput): Promise<PlistConvertResult>
   }
   subscriptions: {
     /** Stop a live subscription (log tail / stream) and release its process. */

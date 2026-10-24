@@ -25,3 +25,6 @@ export type CreateAgentResult =
       /** plutil -lint output. */
       lint?: string
     }
+
+export type PlistConvertResult =
+  { ok: true; data: PlistDict; xml: string } | { ok: false; error: string }
