@@ -178,3 +178,26 @@ describe('saveAgent', () => {
     )
   })
 })
+
+describe('saveAgent keeps <real> (#42)', () => {
+  it('a form-mode save of an unchanged real key keeps <real>2.0</real>', async () => {
+    const xml = serializePlist(ORIGINAL).replace(
+      '</dict>',
+      '\t<key>ExitTimeOut</key>\n\t<real>2.0</real>\n</dict>'
+    )
+    await writeFile(file, xml)
+    const detail = await readAgent(file, deps.writableDirs)
+    expect(detail.realHints).toEqual([{ path: ['ExitTimeOut'], text: '2.0' }])
+    const edited = { ...detail.data, RunAtLoad: false }
+    const result = await saveAgent(
+      file,
+      { data: edited, realHints: detail.realHints },
+      { baseHash: detail.hash },
+      deps
+    )
+    expect(result.ok).toBe(true)
+    const saved = await readFile(file, 'utf8')
+    expect(saved).toContain('<real>2.0</real>')
+    expect(saved).toBe(xml.replace('<true/>', '<false/>'))
+  })
+})

@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises'
-import { build, parse, parseBinary } from 'plist'
-import type { PlistDict, PlistFormat, PlistValue } from '../../shared/plist-types'
+import { parse, parseBinary } from 'plist'
+import type { PlistDict, PlistFormat, PlistValue, RealHint } from '../../shared/plist-types'
+import { findRealHints, serializePlistXml } from './plistXml'
 
 /** LaunchAgent plists are tiny; anything bigger is not something we should load. */
 export const MAX_PLIST_BYTES = 1024 * 1024
@@ -19,6 +20,8 @@ export interface ParsedPlist {
   data: PlistDict
   /** Original text for XML files; normalized XML for binary files. */
   xml: string
+  /** `<real>`s in the XML text (none for binary files: their parser drops the distinction). */
+  realHints: RealHint[]
 }
 
 export function detectFormat(buf: Uint8Array): PlistFormat {
@@ -52,14 +55,9 @@ export function parsePlistXml(xml: string): PlistDict {
   return asDict(value)
 }
 
-/**
- * XML in Apple's layout (what plutil and Xcode write): tab indent, root
- * <dict> at column 0. Keeps diffs against hand-made / Apple-written files small.
- * Dedenting only touches tag lines: text content can't start with `<` (escaped).
- */
-export function serializePlist(data: PlistDict): string {
-  const xml = build(data as Parameters<typeof build>[0], { indent: '\t', newline: '\n' })
-  return xml.replace(/^\t(?=\t*<)/gm, '') + '\n'
+/** XML in Apple's layout; see serializePlistXml. Hints keep unchanged `<real>`s. */
+export function serializePlist(data: PlistDict, realHints: RealHint[] = []): string {
+  return serializePlistXml(data, realHints)
 }
 
 export function parsePlistBuffer(buf: Uint8Array): ParsedPlist {
@@ -73,10 +71,10 @@ export function parsePlistBuffer(buf: Uint8Array): ParsedPlist {
       throw new PlistError(`Malformed binary plist: ${(e as Error).message}`)
     }
     const data = asDict(value)
-    return { format, data, xml: serializePlist(data) }
+    return { format, data, xml: serializePlist(data), realHints: [] }
   }
   const xml = Buffer.from(buf).toString('utf8')
-  return { format, data: parsePlistXml(xml), xml }
+  return { format, data: parsePlistXml(xml), xml, realHints: findRealHints(xml) }
 }
 
 export async function readPlistFile(path: string): Promise<ParsedPlist> {

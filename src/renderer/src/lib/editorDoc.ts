@@ -5,7 +5,7 @@ import {
   type FormErrors
 } from '../../../shared/agent-form'
 import type { PlistConvertResult, PlistInput } from '../../../shared/edit-types'
-import type { PlistValue } from '../../../shared/plist-types'
+import type { PlistValue, RealHint } from '../../../shared/plist-types'
 import { tidyForm } from './formEdit'
 
 export type EditorMode = 'form' | 'xml'
@@ -15,6 +15,8 @@ export interface EditorDoc {
   mode: EditorMode
   form: AgentForm
   xml: string
+  /** `<real>`s of the source XML, sent with form data so unchanged reals stay reals. */
+  realHints: RealHint[]
   /**
    * XML text and the form parsed from it at the last XML → form switch. If the
    * form is unchanged when switching back, the user's exact text (comments,
@@ -29,7 +31,7 @@ export type SwitchResult =
   { ok: true; doc: EditorDoc } | { ok: false; error: string; fieldErrors?: FormErrors }
 
 export function formDoc(form: AgentForm): EditorDoc {
-  return { mode: 'form', form, xml: '' }
+  return { mode: 'form', form, xml: '', realHints: [] }
 }
 
 export function deepEqual(a: unknown, b: unknown): boolean {
@@ -70,7 +72,7 @@ export async function switchToXml(doc: EditorDoc, convert: Convert): Promise<Swi
   if (doc.mode === 'xml') return { ok: true, doc }
   const form = tidyForm(doc.form)
   if (doc.origin && deepEqual(tidyForm(doc.origin.form), form)) {
-    return { ok: true, doc: { mode: 'xml', form, xml: doc.origin.xml } }
+    return { ok: true, doc: { ...doc, mode: 'xml', form, xml: doc.origin.xml } }
   }
   const result = formToPlist(form)
   if (!result.ok) {
@@ -80,9 +82,9 @@ export async function switchToXml(doc: EditorDoc, convert: Convert): Promise<Swi
       fieldErrors: result.errors
     }
   }
-  const converted = await convert({ data: result.data })
+  const converted = await convert({ data: result.data, realHints: doc.realHints })
   if (!converted.ok) return { ok: false, error: converted.error }
-  return { ok: true, doc: { mode: 'xml', form, xml: converted.xml } }
+  return { ok: true, doc: { ...doc, mode: 'xml', form, xml: converted.xml } }
 }
 
 export async function switchToForm(doc: EditorDoc, convert: Convert): Promise<SwitchResult> {
@@ -95,7 +97,16 @@ export async function switchToForm(doc: EditorDoc, convert: Convert): Promise<Sw
     }
   }
   const form = plistToForm(converted.data)
-  return { ok: true, doc: { mode: 'form', form, xml: doc.xml, origin: { xml: doc.xml, form } } }
+  return {
+    ok: true,
+    doc: {
+      mode: 'form',
+      form,
+      xml: doc.xml,
+      realHints: converted.realHints,
+      origin: { xml: doc.xml, form }
+    }
+  }
 }
 
 /** The editor's content as save/create input. */
@@ -106,5 +117,5 @@ export function docInput(
   const result = formToPlist(tidyForm(doc.form))
   if (!result.ok)
     return { ok: false, error: 'Fix the highlighted fields', fieldErrors: result.errors }
-  return { ok: true, input: { data: result.data } }
+  return { ok: true, input: { data: result.data, realHints: doc.realHints } }
 }

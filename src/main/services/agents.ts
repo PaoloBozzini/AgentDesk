@@ -131,6 +131,7 @@ export async function readAgent(path: unknown, dirs: AgentDir[]): Promise<AgentD
     summary: { ...summarize(file.path, fileName, file.scope, parsed.data), format: parsed.format },
     data: parsed.data,
     xml: parsed.xml,
+    realHints: parsed.realHints,
     hash: contentHash(bytes)
   }
 }

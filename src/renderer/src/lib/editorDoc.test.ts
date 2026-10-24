@@ -11,9 +11,9 @@ const convert = vi.fn<Convert>(async (input: PlistInput) => {
     if ('xml' in input) {
       const data = parse(input.xml) as PlistDict
       if (typeof data !== 'object' || Array.isArray(data)) throw new Error('root must be a dict')
-      return { ok: true, data, xml: input.xml }
+      return { ok: true, data, xml: input.xml, realHints: [] }
     }
-    return { ok: true, data: input.data, xml: build(input.data as never) }
+    return { ok: true, data: input.data, xml: build(input.data as never), realHints: [] }
   } catch (e) {
     return { ok: false, error: (e as Error).message }
   }
@@ -42,7 +42,7 @@ describe('switching modes', () => {
 
   it('form edits show up in the XML', async () => {
     const xml = build({ Label: 'com.t.a', Program: '/bin/true', Custom: 7 } as never)
-    const back = await switchToForm({ mode: 'xml', form, xml }, convert)
+    const back = await switchToForm({ mode: 'xml', form, realHints: [], xml }, convert)
     if (!back.ok) throw new Error()
     const again = await switchToXml(
       { ...back.doc, form: { ...back.doc.form, runAtLoad: 'true' } },
@@ -63,7 +63,7 @@ describe('switching modes', () => {
       '<dict>\n  <!-- keep me -->'
     )
     convert.mockClear()
-    const back = await switchToForm({ mode: 'xml', form, xml }, convert)
+    const back = await switchToForm({ mode: 'xml', form, realHints: [], xml }, convert)
     if (!back.ok) throw new Error()
     const again = await switchToXml(back.doc, convert)
     expect(again.ok && again.doc.xml).toBe(xml)
@@ -71,13 +71,19 @@ describe('switching modes', () => {
   })
 
   it('invalid XML blocks switching to the form', async () => {
-    const result = await switchToForm({ mode: 'xml', form, xml: '<plist><dict><key>x' }, convert)
+    const result = await switchToForm(
+      { mode: 'xml', form, realHints: [], xml: '<plist><dict><key>x' },
+      convert
+    )
     expect(result).toMatchObject({ ok: false })
     expect(!result.ok && result.error).toMatch(/^The XML is not a valid plist/)
   })
 
   it('XML with a non-dict root blocks switching', async () => {
-    const result = await switchToForm({ mode: 'xml', form, xml: build(['a'] as never) }, convert)
+    const result = await switchToForm(
+      { mode: 'xml', form, realHints: [], xml: build(['a'] as never) },
+      convert
+    )
     expect(result.ok).toBe(false)
   })
 
@@ -94,7 +100,7 @@ describe('switching modes', () => {
 
 describe('docInput', () => {
   it('uses XML text as typed in XML mode', () => {
-    expect(docInput({ mode: 'xml', form, xml: '<x/>' })).toEqual({
+    expect(docInput({ mode: 'xml', form, realHints: [], xml: '<x/>' })).toEqual({
       ok: true,
       input: { xml: '<x/>' }
     })

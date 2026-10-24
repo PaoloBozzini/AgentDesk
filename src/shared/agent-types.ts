@@ -1,4 +1,4 @@
-import type { PlistDict, PlistFormat } from './plist-types'
+import type { PlistDict, PlistFormat, RealHint } from './plist-types'
 
 export type AgentScope = 'user' | 'global-agent' | 'global-daemon'
 
@@ -47,6 +47,8 @@ export interface AgentDetail {
   data: PlistDict
   /** Original XML, or normalized XML when the file is binary. */
   xml: string
+  /** `<real>`s in `xml`, so form-mode saves keep them (see RealHint). */
+  realHints: RealHint[]
   /** sha256 of the file bytes, passed back on save to detect outside changes. */
   hash: string
 }
