@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { emptyAgentForm } from '../../../shared/agent-form'
-import { followLabel, intervalHint, linesToList, listToLines, tidyForm } from './formEdit'
+import {
+  applyPickedProgram,
+  followLabel,
+  intervalHint,
+  linesToList,
+  listToLines,
+  tidyForm
+} from './formEdit'
 
 describe('lines', () => {
   it('round-trips, keeping blank lines while typing', () => {
@@ -79,5 +86,36 @@ describe('followLabel', () => {
     const prev = at('com.t.a')
     const next = { ...prev, standardOutPath: '/x' }
     expect(followLabel(prev, next, home)).toBe(next)
+  })
+})
+
+describe('applyPickedProgram', () => {
+  const base = emptyAgentForm()
+
+  it('sets Program for an executable, keeping arguments', () => {
+    const f = { ...base, program: '/old', programArguments: ['x', '--flag'] }
+    expect(applyPickedProgram(f, '/usr/local/bin/tool')).toMatchObject({
+      program: '/usr/local/bin/tool',
+      programArguments: ['x', '--flag']
+    })
+  })
+
+  it('replaces argv[0] when the command is only ProgramArguments', () => {
+    const f = { ...base, programArguments: ['/old/tool', 'a b'] }
+    expect(applyPickedProgram(f, '/new/tool')).toMatchObject({
+      program: '',
+      programArguments: ['/new/tool', 'a b']
+    })
+  })
+
+  it('opens an app bundle with open -a', () => {
+    expect(applyPickedProgram(base, '/Applications/Safari.app/')).toMatchObject({
+      program: '',
+      programArguments: ['/usr/bin/open', '-a', '/Applications/Safari.app']
+    })
+  })
+
+  it('an empty form gets Program', () => {
+    expect(applyPickedProgram(base, '/bin/date').program).toBe('/bin/date')
   })
 })

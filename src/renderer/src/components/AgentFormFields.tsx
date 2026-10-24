@@ -1,9 +1,6 @@
 import { useId, useState } from 'react'
 import {
-  CALENDAR_FIELDS,
-  emptyCalendarEntry,
   type AgentForm,
-  type CalendarField,
   type FormErrors,
   type KeepAliveForm,
   type ScriptShell,
@@ -14,16 +11,16 @@ import {
   scriptFileOf,
   switchCommandMode
 } from '../../../shared/agent-form'
-import { errorsLogNextTo, intervalHint, linesToList, listToLines } from '../lib/formEdit'
+import type { PathKind } from '../../../shared/ipc-contract'
+import {
+  applyPickedProgram,
+  errorsLogNextTo,
+  intervalHint,
+  linesToList,
+  listToLines
+} from '../lib/formEdit'
 import { CodeEditor } from './CodeEditor'
-
-const CALENDAR_LABELS: Record<CalendarField, string> = {
-  minute: 'Minute',
-  hour: 'Hour',
-  day: 'Day',
-  weekday: 'Weekday',
-  month: 'Month'
-}
+import { ScheduleEditor } from './ScheduleEditor'
 
 const KEEP_ALIVE_LABELS: Record<KeepAliveForm['mode'], string> = {
   unset: 'Not set',
@@ -115,6 +112,14 @@ export function AgentFormFields({
     busy: boolean
     error?: string
   } | null>(null)
+
+  /** Native file dialog (main process); `apply` gets the picked path. */
+  const choose = async (kind: PathKind, apply: (path: string) => void): Promise<void> => {
+    const path = await window.agentDesk.app.choosePath(kind)
+    if (path) apply(path)
+  }
+  const pickProgram = (): Promise<void> =>
+    choose('program', (path) => onChange(applyPickedProgram(form, path)))
 
   const chooseMode = (mode: AgentForm['commandMode']): void => {
     if (mode === form.commandMode) return
@@ -292,14 +297,19 @@ export function AgentFormFields({
               hint="Absolute path. Optional when the first argument is the executable."
             >
               {(id) => (
-                <input
-                  id={id}
-                  className="mono"
-                  value={form.program}
-                  spellCheck={false}
-                  placeholder="/usr/local/bin/my-script"
-                  onChange={(e) => set('program', e.target.value)}
-                />
+                <div className="input-with-button">
+                  <input
+                    id={id}
+                    className="mono"
+                    value={form.program}
+                    spellCheck={false}
+                    placeholder="/usr/local/bin/my-script"
+                    onChange={(e) => set('program', e.target.value)}
+                  />
+                  <button type="button" className="button" onClick={() => void pickProgram()}>
+                    Choose…
+                  </button>
+                </div>
               )}
             </Field>
             <Field
@@ -345,59 +355,11 @@ export function AgentFormFields({
           )}
         </Field>
 
-        <div className="field">
-          <span className="field-label">Calendar (StartCalendarInterval, blank = any)</span>
-          {form.startCalendarInterval.map((entry, i) => (
-            <div className="calendar-row" key={i}>
-              {CALENDAR_FIELDS.map((f) => {
-                const error = errors[`startCalendarInterval.${i}.${f}`]
-                return (
-                  <label key={f} className={error ? 'mini has-error' : 'mini'} title={error}>
-                    <span>{CALENDAR_LABELS[f]}</span>
-                    <input
-                      inputMode="numeric"
-                      value={entry[f]}
-                      aria-invalid={!!error}
-                      onChange={(e) =>
-                        set(
-                          'startCalendarInterval',
-                          form.startCalendarInterval.map((x, j) =>
-                            j === i ? { ...x, [f]: e.target.value } : x
-                          )
-                        )
-                      }
-                    />
-                  </label>
-                )
-              })}
-              <button
-                type="button"
-                className="icon-button"
-                aria-label={`Remove calendar entry ${i + 1}`}
-                onClick={() =>
-                  set(
-                    'startCalendarInterval',
-                    form.startCalendarInterval.filter((_, j) => j !== i)
-                  )
-                }
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-          {listErrors(errors, 'startCalendarInterval') && (
-            <p className="field-error">{listErrors(errors, 'startCalendarInterval')}</p>
-          )}
-          <button
-            type="button"
-            className="link-button"
-            onClick={() =>
-              set('startCalendarInterval', [...form.startCalendarInterval, emptyCalendarEntry()])
-            }
-          >
-            + Add time
-          </button>
-        </div>
+        <ScheduleEditor
+          entries={form.startCalendarInterval}
+          errors={errors}
+          onChange={(entries) => set('startCalendarInterval', entries)}
+        />
 
         <Field label="Watch paths (one per line)" error={listErrors(errors, 'watchPaths')}>
           {(id) => (
@@ -411,6 +373,17 @@ export function AgentFormFields({
             />
           )}
         </Field>
+        <button
+          type="button"
+          className="link-button watch-add"
+          onClick={() =>
+            void choose('any', (p) =>
+              set('watchPaths', [...form.watchPaths.filter((w) => w !== ''), p])
+            )
+          }
+        >
+          + Add file or folder…
+        </button>
 
         <Field label="Keep alive" error={errors.keepAlive}>
           {(id) => (
@@ -467,13 +440,22 @@ export function AgentFormFields({
           <legend>Environment</legend>
           <Field label="Working directory" error={errors.workingDirectory}>
             {(id) => (
-              <input
-                id={id}
-                className="mono"
-                value={form.workingDirectory}
-                spellCheck={false}
-                onChange={(e) => set('workingDirectory', e.target.value)}
-              />
+              <div className="input-with-button">
+                <input
+                  id={id}
+                  className="mono"
+                  value={form.workingDirectory}
+                  spellCheck={false}
+                  onChange={(e) => set('workingDirectory', e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => void choose('folder', (p) => set('workingDirectory', p))}
+                >
+                  Choose…
+                </button>
+              </div>
             )}
           </Field>
           <div className="field">

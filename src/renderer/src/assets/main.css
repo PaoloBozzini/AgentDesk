@@ -973,3 +973,68 @@ pre.field-error {
 .agent-form .notice {
   margin: 4px 0 0;
 }
+
+/* File pickers */
+.input-with-button {
+  display: flex;
+  gap: 6px;
+}
+
+.input-with-button input {
+  flex: 1;
+  min-width: 0;
+}
+
+.watch-add {
+  margin: -6px 0 10px;
+}
+
+/* Schedule */
+.sched-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.sched-row > .icon-button {
+  margin-left: auto;
+}
+
+.sched-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+.agent-form .sched-inline input[type='number'] {
+  width: 64px;
+}
+
+.weekday-chips {
+  display: flex;
+  gap: 4px;
+}
+
+.weekday-chips .chip {
+  min-width: 44px;
+}
+
+.sched-row .calendar-row {
+  margin-bottom: 0;
+}
+
+.sched-note {
+  flex-basis: 100%;
+}
+
+.sched-summary {
+  margin-top: 4px;
+  font-weight: 500;
+}

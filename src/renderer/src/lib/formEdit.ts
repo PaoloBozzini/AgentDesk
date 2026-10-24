@@ -68,3 +68,19 @@ export function errorsLogNextTo(outputPath: string): string {
   const slash = outputPath.lastIndexOf('/')
   return `${slash >= 0 ? outputPath.slice(0, slash) : ''}/errors.log`
 }
+
+/**
+ * Program chosen in the file dialog. An app bundle can't be run by launchd
+ * directly, so it becomes `/usr/bin/open -a <app>`. Otherwise the executable is
+ * replaced and the arguments kept (argv[0] too, when there's no Program key).
+ */
+export function applyPickedProgram(form: AgentForm, path: string): AgentForm {
+  const clean = path.replace(/\/+$/, '')
+  if (clean.endsWith('.app')) {
+    return { ...form, program: '', programArguments: ['/usr/bin/open', '-a', clean] }
+  }
+  if (!form.program && form.programArguments.length > 0) {
+    return { ...form, programArguments: [clean, ...form.programArguments.slice(1)] }
+  }
+  return { ...form, program: clean }
+}

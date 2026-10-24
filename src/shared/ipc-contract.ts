@@ -23,6 +23,7 @@ export const IpcChannel = {
   AppGetInfo: 'app:get-info',
   AppCopyText: 'app:copy-text',
   AppRevealBackups: 'app:reveal-backups',
+  AppChoosePath: 'app:choose-path',
   AgentsList: 'agents:list',
   AgentsRead: 'agents:read',
   AgentsControl: 'agents:control',
@@ -50,6 +51,12 @@ export interface ListAgentsOptions {
   /** Also list /Library/LaunchAgents and /Library/LaunchDaemons (read-only). */
   includeSystem?: boolean
 }
+
+/** What a native open dialog may pick: a program file, a folder, or either. */
+export type PathKind = 'program' | 'folder' | 'any'
+
+export const isPathKind = (v: unknown): v is PathKind =>
+  v === 'program' || v === 'folder' || v === 'any'
 
 export interface AppInfo {
   name: string
@@ -86,6 +93,8 @@ export interface AgentDeskApi {
     copyText(text: string): Promise<void>
     /** Open ~/Library/Application Support/Agent Desk/backups in Finder (created if missing). */
     revealBackups(): Promise<void>
+    /** Native open dialog; resolves the picked path, or null when cancelled. */
+    choosePath(kind: PathKind): Promise<string | null>
   }
   agents: {
     list(options?: ListAgentsOptions): Promise<AgentListResult>
